@@ -1,0 +1,284 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Nuestros Peludos - Luna & Lia{% endblock %}
+
+{% block content %}
+<div class="pets-listing-container">
+    <!-- Header con carrusel -->
+    <div id="pets-listing-carousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            {% for mascota in mascotas_carousel %}
+                <button type="button" data-bs-target="#pets-listing-carousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}" aria-current="true"></button>
+            {% endfor %}
+        </div>
+        <div class="carousel-inner">
+            {% for mascota in mascotas_carousel %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="carousel-image-container">
+                        <img src="{{ mascota.imagen_principal.url }}" class="d-block w-100 pet-image" alt="{{ mascota.nombre }}">
+                    </div>
+                    <div class="carousel-caption d-none d-md-block">
+                        <h1 class="display-4 animated-text">Nuestros Peludos</h1>
+                        <p class="lead animated-text">Encuentra a tu compañero perfecto entre ellos.</p>
+                        <a href="#filtros-container" class="btn btn-primary-custom btn-lg">Buscar Ahora</a>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="carousel-item active">
+                    <div class="carousel-image-container fallback-header">
+                        <div class="carousel-caption">
+                            <h1 class="display-4">Nuestros Peludos</h1>
+                            <p class="lead">Encuentra tu compañero perfecto.</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#pets-listing-carousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#pets-listing-carousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Siguiente</span>
+        </button>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="filters-section" id="filtros-container">
+        <div class="container">
+            <div class="text-center mb-3">
+                <button class="btn btn-secondary-custom" type="button" data-bs-toggle="collapse" data-bs-target="#filters-collapse" aria-expanded="false" aria-controls="filters-collapse">
+                    <i class="fas fa-filter me-2"></i>Mostrar/Ocultar Filtros
+                </button>
+            </div>
+
+            <div class="collapse" id="filters-collapse">
+                <div class="filters-container">
+                    <form method="get" id="filters-form" class="filters-form">
+                        <!-- Búsqueda por texto -->
+                        <div class="search-group">
+                            <div class="search-input-container">
+                                <i class="fas fa-search search-icon"></i>
+                                <input
+                                    type="text"
+                                    name="q"
+                                    value="{{ filtros_actuales.q|default:'' }}"
+                                    placeholder="Buscar por nombre, raza, personalidad..."
+                                    class="search-input"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Filtros principales -->
+                        <div class="filters-row">
+                            <div class="filter-group">
+                                <label for="tipo">Especie</label>
+                                <select name="tipo" id="tipo" class="filter-select">
+                                    <option value="">Cualquier especie</option>
+                                    {% for value, label in tipos %}
+                                        <option value="{{ value }}" {% if filtros_actuales.tipo == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label for="sexo">Sexo</label>
+                                <select name="sexo" id="sexo" class="filter-select">
+                                    <option value="">Cualquier sexo</option>
+                                    {% for value, label in sexos %}
+                                        <option value="{{ value }}" {% if filtros_actuales.sexo == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label for="tamaño">Tamaño</label>
+                                <select name="tamaño" id="tamaño" class="filter-select">
+                                    <option value="">Cualquier tamaño</option>
+                                    {% for value, label in tamaños %}
+                                        <option value="{{ value }}" {% if filtros_actuales.tamaño == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label for="estado_adopcion">Estado</label>
+                                <select name="estado_adopcion" id="estado_adopcion" class="filter-select">
+                                    <option value="">Cualquier estado</option>
+                                    {% for value, label in estados %}
+                                        <option value="{{ value }}" {% if filtros_actuales.estado_adopcion == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Filtros de edad -->
+                        <div class="filters-row">
+                            <div class="filter-group">
+                                <label for="edad_min">Edad mínima (meses)</label>
+                                <input
+                                    type="number"
+                                    name="edad_min"
+                                    id="edad_min"
+                                    value="{{ filtros_actuales.edad_min|default:'' }}"
+                                    min="0"
+                                    max="240"
+                                    placeholder="0"
+                                    class="filter-input"
+                                >
+                            </div>
+
+                            <div class="filter-group">
+                                <label for="edad_max">Edad máxima (meses)</label>
+                                <input
+                                    type="number"
+                                    name="edad_max"
+                                    id="edad_max"
+                                    value="{{ filtros_actuales.edad_max|default:'' }}"
+                                    min="0"
+                                    max="240"
+                                    placeholder="240"
+                                    class="filter-input"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="filters-actions">
+                            <button type="submit" class="btn btn-primary-custom">
+                                <i class="fas fa-search"></i>
+                                Buscar
+                            </button>
+                            <a href="{% url 'lista_mascotas' %}" class="btn btn-secondary-custom">
+                                <i class="fas fa-times"></i>
+                                Limpiar Filtros
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="container mt-4">
+        <h4 id="total-results-container">Mostrando <span id="total-results">{{ total_results }}</span> peludos</h4>
+        <hr>
+    </div>
+    
+    <section class="pets-grid-section pt-2 pb-5">
+        <div class="container">
+            <div id="pets-grid-container">
+                {% include 'adopcion/_lista_mascotas_parcial.html' %}
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filters-form');
+    const petsGridContainer = document.getElementById('pets-grid-container');
+    const totalResultsSpan = document.getElementById('total-results');
+    const loadingSpinner = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+
+    function fetchMascotas() {
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+        const url = `{% url 'lista_mascotas' %}?${params.toString()}`;
+
+        // Mostrar spinner
+        petsGridContainer.innerHTML = loadingSpinner;
+        
+        // Actualizar URL del navegador
+        history.pushState(null, '', `?${params.toString()}`);
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newGrid = doc.getElementById('mascotas-grid-content');
+            const newPagination = doc.querySelector('.pagination-container');
+            const newTotal = doc.getElementById('total-results-hidden')?.value || '0';
+
+            // Actualizar contenido y contador
+            petsGridContainer.innerHTML = '';
+            if (newGrid) petsGridContainer.appendChild(newGrid);
+            if (newPagination) petsGridContainer.appendChild(newPagination);
+            totalResultsSpan.textContent = newTotal;
+        })
+        .catch(error => {
+            console.error('Error al filtrar mascotas:', error);
+            petsGridContainer.innerHTML = '<p class="text-danger text-center">Hubo un error al cargar las mascotas. Por favor, intenta de nuevo.</p>';
+        });
+    }
+
+    // Event listeners para los filtros
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetchMascotas();
+    });
+
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        // 'submit' en el input de texto para que funcione con Enter
+        if (input.type === 'text' || input.type === 'number') {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+        } else {
+             // 'change' para selects
+            input.addEventListener('change', fetchMascotas);
+        }
+    });
+
+    // Paginación AJAX
+    petsGridContainer.addEventListener('click', function(e) {
+        if (e.target.matches('.page-link')) {
+            e.preventDefault();
+            const page = e.target.dataset.page;
+            if (page) {
+                const formData = new FormData(form);
+                formData.set('page', page);
+                const params = new URLSearchParams(formData);
+                const url = `{% url 'lista_mascotas' %}?${params.toString()}`;
+
+                petsGridContainer.innerHTML = loadingSpinner;
+                history.pushState(null, '', `?${params.toString()}`);
+                
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    petsGridContainer.innerHTML = html;
+                })
+                .catch(error => console.error('Error en paginación:', error));
+            }
+        }
+    });
+});
+</script>
+<style>
+    #pets-grid-container .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+{% endblock %} 

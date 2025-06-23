@@ -1,0 +1,12 @@
+Hola {{ donacion.nombre_donante }},
+
+Queremos darte las gracias de corazón por tu generosa donación a Luna y Lia: Rescatando Huellas.
+
+Gracias a personas como tú, cada día estamos más cerca de transformar la vida de perros y gatos que han sido abandonados o maltratados. Tu aporte no solo significa alimento, atención médica y refugio, sino una nueva oportunidad de vida para cada patita que rescatamos.
+
+🐶🐱 Hoy, tú te conviertes en parte de esta familia que lucha por un mundo más justo y amoroso para quienes no tienen voz.
+
+Si deseas conocer en qué será usada tu donación o recibir actualizaciones de nuestros peluditos, no dudes en responder a este mensaje. ¡Nos encantaría mantenerte cerca!
+
+Con cariño,
+El equipo de Luna y Lia: Rescatando Huellas 

@@ -1,0 +1,16 @@
+¡Bienvenido a Luna & Lía: Rescatando Huellas!
+
+Hola, {{ usuario.nombre }}.
+
+Te damos una calurosa bienvenida a nuestra comunidad. Estamos muy felices de que te unas a nuestra causa.
+
+Gracias a tu apoyo, podemos seguir rescatando, rehabilitando y buscando hogares amorosos para cientos de perros y gatos.
+
+Ahora puedes explorar las mascotas que esperan por un hogar, hacer donaciones o aprender más sobre nuestra misión en nuestro sitio web:
+{{ request.scheme }}://{{ request.get_host }}{% url 'inicio' %}
+
+¡Cada pequeña acción cuenta!
+
+---
+Recibiste este correo porque te registraste en nuestro sitio web.
+© {% now "Y" %} Luna & Lía: Rescatando Huellas. 

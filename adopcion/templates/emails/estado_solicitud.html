@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Actualización de tu Solicitud de Adopción</title>
+</head>
+<body style="font-family: sans-serif; background-color: #fdfaf3; color: #4b3f36; padding: 20px;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e5cd6c;">
+        <tr>
+            <td style="background-color: #8c6239; color: white; padding: 20px; text-align: center;">
+                <h1>Actualización sobre tu Solicitud</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px 20px;">
+                <h2 style="color: #d38d44;">Hola, {{ solicitud.usuario.nombre }}</h2>
+                <p>Te escribimos para informarte sobre el estado de tu solicitud para adoptar a <strong>{{ solicitud.mascota.nombre }}</strong>.</p>
+                
+                <div style="padding: 15px; border-left: 5px solid {% if solicitud.estado_solicitud == 'aprobada' %}#28a745{% else %}#dc3545{% endif %}; background-color: #f8f9fa; margin: 20px 0;">
+                    <p style="margin: 0;"><strong>Estado actual:</strong> {{ solicitud.get_estado_solicitud_display }}</p>
+                </div>
+
+                {% if solicitud.estado_solicitud == 'aprobada' %}
+                    <p>¡Felicidades! Tu solicitud ha sido aprobada. Estamos muy contentos de que {{ solicitud.mascota.nombre }} vaya a tener un hogar tan maravilloso como el tuyo.</p>
+                    <p>En breve, uno de nuestros voluntarios se pondrá en contacto contigo para coordinar los últimos detalles de la entrega.</p>
+                {% else %}
+                    <p>Lamentamos informarte que, tras una cuidadosa revisión, tu solicitud no ha sido aprobada en esta ocasión.</p>
+                    <p>A veces, la decisión se basa en pequeños detalles para asegurar la compatibilidad perfecta entre la mascota y su nuevo hogar. Te animamos a no desanimarte y a seguir buscando a tu compañero ideal. ¡Hay muchas otras mascotas esperando una oportunidad!</p>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #f2f2f2; text-align: center; padding: 15px; font-size: 12px; color: #888;">
+                <p>Para cualquier consulta, no dudes en contactarnos.</p>
+                <p>&copy; {% now "Y" %} Luna & Lía: Rescatando Huellas.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html> 

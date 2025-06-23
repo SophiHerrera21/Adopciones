@@ -1,0 +1,176 @@
+{% extends 'adopcion/base.html' %}
+
+{% block title %}Central de Reportes - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-file-pdf me-2"></i>Central de Reportes</h1>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al Panel
+        </a>
+    </div>
+
+    <p class="lead">Selecciona el reporte que deseas generar en formato PDF con datos en tiempo real.</p>
+
+    <div class="row">
+        <!-- Reporte de Mascotas -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-paw fa-2x text-primary me-3"></i>
+                        <h5 class="card-title mb-0">Reporte General de Mascotas</h5>
+                    </div>
+                    <p class="card-text">Genera un listado completo de todas las mascotas registradas en la fundación, incluyendo su estado actual (disponible, adoptado, etc.) y fecha de ingreso con timestamps.</p>
+                    <a href="{% url 'pdf_mascotas' %}" class="btn btn-primary w-100" target="_blank">
+                        <i class="fas fa-download me-1"></i>Generar PDF de Mascotas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Donaciones -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-hand-holding-heart fa-2x text-success me-3"></i>
+                        <h5 class="card-title mb-0">Reporte de Donaciones</h5>
+                    </div>
+                    <p class="card-text">Informe detallado de donaciones (monetarias e insumos).</p>
+                    
+                    <form action="{% url 'pdf_donaciones' %}" method="get" target="_blank" class="mt-auto">
+                        <p class="mb-2"><strong>Generar reporte mensual:</strong></p>
+                        <div class="mb-2">{{ form.mes }}</div>
+                        <div class="mb-2">{{ form.año }}</div>
+                        <button type="submit" class="btn btn-success w-100 mb-2">
+                            <i class="fas fa-calendar-alt me-1"></i>Generar Reporte Mensual
+                        </button>
+                        <a href="{% url 'pdf_donaciones' %}" class="btn btn-outline-success w-100" target="_blank">
+                            <i class="fas fa-file-pdf me-1"></i>Generar Reporte Completo
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Solicitudes de Adopción -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-file-alt fa-2x text-warning me-3"></i>
+                        <h5 class="card-title mb-0">Reporte de Solicitudes</h5>
+                    </div>
+                    <p class="card-text">Estadísticas de solicitudes de pre-adopción.</p>
+
+                    <form action="{% url 'pdf_solicitudes' %}" method="get" target="_blank" class="mt-auto">
+                        <p class="mb-2"><strong>Generar reporte mensual:</strong></p>
+                        <div class="mb-2">{{ form.mes }}</div>
+                        <div class="mb-2">{{ form.año }}</div>
+                        <button type="submit" class="btn btn-warning w-100 mb-2">
+                            <i class="fas fa-calendar-alt me-1"></i>Generar Reporte Mensual
+                        </button>
+                        <a href="{% url 'pdf_solicitudes' %}" class="btn btn-outline-warning w-100" target="_blank">
+                            <i class="fas fa-file-pdf me-1"></i>Generar Reporte Completo
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Actividad Reciente -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-clock fa-2x text-info me-3"></i>
+                        <h5 class="card-title mb-0">Reporte de Actividad</h5>
+                    </div>
+                    <p class="card-text">Informe de actividad reciente con timestamps de ingreso de mascotas, donaciones realizadas y solicitudes procesadas en tiempo real.</p>
+                    <a href="{% url 'pdf_actividad' %}" class="btn btn-info w-100" target="_blank">
+                        <i class="fas fa-download me-1"></i>Generar PDF de Actividad
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte Combinado -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-chart-bar fa-2x text-danger me-3"></i>
+                        <h5 class="card-title mb-0">Dashboard Completo</h5>
+                    </div>
+                    <p class="card-text">Accede al panel de administración con gráficas interactivas en tiempo real, estadísticas actualizadas y monitoreo de todas las actividades.</p>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-danger w-100">
+                        <i class="fas fa-chart-line me-1"></i>Ver Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de Reportes -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-info">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-info-circle fa-2x text-info me-3"></i>
+                        <h5 class="card-title mb-0">Información</h5>
+                    </div>
+                    <p class="card-text"><strong>Datos en Tiempo Real:</strong> Todos los reportes se generan con información actualizada al momento de la descarga.</p>
+                    <p class="card-text"><strong>Timestamps:</strong> Cada actividad incluye fecha y hora exacta de ocurrencia.</p>
+                    <p class="card-text"><strong>Formato:</strong> Los reportes se descargan en PDF con el logo y colores de la fundación.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3><i class="fas fa-chart-pie me-2"></i>Estadísticas Rápidas</h3>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-primary">
+                        <div class="card-body">
+                            <i class="fas fa-paw fa-2x text-primary mb-2"></i>
+                            <h4 class="card-title">Mascotas</h4>
+                            <p class="card-text fs-5">Total en la fundación</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-success">
+                        <div class="card-body">
+                            <i class="fas fa-hand-holding-heart fa-2x text-success mb-2"></i>
+                            <h4 class="card-title">Donaciones</h4>
+                            <p class="card-text fs-5">Monetarias e insumos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-warning">
+                        <div class="card-body">
+                            <i class="fas fa-file-alt fa-2x text-warning mb-2"></i>
+                            <h4 class="card-title">Solicitudes</h4>
+                            <p class="card-text fs-5">De pre-adopción</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-info">
+                        <div class="card-body">
+                            <i class="fas fa-users fa-2x text-info mb-2"></i>
+                            <h4 class="card-title">Usuarios</h4>
+                            <p class="card-text fs-5">Registrados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

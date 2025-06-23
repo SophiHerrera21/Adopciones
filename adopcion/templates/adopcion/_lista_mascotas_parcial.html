@@ -1,0 +1,91 @@
+{% load static %}
+{% if mascotas %}
+<div class="row" id="mascotas-grid-content">
+    {% for mascota in mascotas %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="pet-card">
+            <div class="pet-image-container">
+                <a href="{% url 'mascota_detalle' mascota.id %}">
+                    {% if mascota.imagen_principal %}
+                        <img src="{{ mascota.imagen_principal.url }}" alt="Foto de {{ mascota.nombre }}" class="pet-image">
+                    {% else %}
+                        <img src="{% static 'images/default-pet.png' %}" alt="Imagen por defecto" class="pet-image">
+                    {% endif %}
+                </a>
+                <span class="pet-status-badge {{ mascota.estado_adopcion }}">{{ mascota.get_estado_adopcion_display }}</span>
+                {% if user.is_authenticated %}
+                <button class="btn-favorito" data-mascota-id="{{ mascota.id }}" title="Añadir a favoritos">
+                    <i class="fas fa-heart"></i>
+                </button>
+                {% endif %}
+            </div>
+            <div class="pet-info">
+                <h5 class="pet-name"><a href="{% url 'mascota_detalle' mascota.id %}">{{ mascota.nombre }}</a></h5>
+                <div class="pet-badges mb-2">
+                    <span class="badge badge-type">{{ mascota.get_tipo_display }}</span>
+                    <span class="badge badge-sex">{{ mascota.get_sexo_display }}</span>
+                    <span class="badge badge-size">{{ mascota.get_tamaño_display }}</span>
+                </div>
+                <p class="pet-details">
+                    <i class="fas fa-birthday-cake me-1"></i> <span class="pet-age">Edad: {{ mascota.edad_aproximada }} meses</span>
+                    <span class="mx-2">|</span>
+                    <i class="fas fa-ruler-combined me-1"></i> {{ mascota.get_tamaño_display }}
+                </p>
+                <div class="pet-actions mt-3">
+                    <a href="{% url 'mascota_detalle' mascota.id %}" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
+                    {% if mascota.estado_adopcion == 'disponible' %}
+                    <a href="{% url 'solicitar_adopcion' mascota.id %}" class="btn btn-sm btn-primary-custom">¡Adóptame!</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<div class="pagination-container mt-4">
+    <nav aria-label="Paginación de mascotas">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ request.GET.urlencode | cut:'page=' }}" data-page="{{ page_obj.previous_page_number }}">&laquo; Anterior</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo; Anterior</span>
+                </li>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+                {% if page_obj.number == i %}
+                    <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}{{ request.GET.urlencode | cut:'page=' }}" data-page="{{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ request.GET.urlencode | cut:'page=' }}" data-page="{{ page_obj.next_page_number }}">Siguiente &raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Siguiente &raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+{% else %}
+<div class="no-results text-center py-5">
+    <div class="no-results-icon">
+        <i class="fas fa-search-minus fa-4x"></i>
+    </div>
+    <h3 class="mt-4">No se encontraron peludos</h3>
+    <p class="text-muted">No hemos encontrado mascotas que coincidan con tus filtros. ¿Por qué no pruebas con otros criterios?</p>
+    <a href="{% url 'lista_mascotas' %}" class="btn btn-primary-custom mt-3">Limpiar todos los filtros</a>
+</div>
+{% endif %} 

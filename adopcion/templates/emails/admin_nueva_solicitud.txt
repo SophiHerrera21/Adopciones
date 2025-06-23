@@ -1,0 +1,42 @@
+Luna & Lía: Rescatando Huellas
+Nueva Solicitud de Adopción
+
+⚠️ NUEVA SOLICITUD REQUIERE REVISIÓN
+
+Se ha recibido una nueva solicitud de adopción que requiere tu atención.
+
+INFORMACIÓN DEL SOLICITANTE:
+- Nombre: {{ solicitud.usuario.nombre }} {{ solicitud.usuario.apellido }}
+- Email: {{ solicitud.usuario.email }}
+- Teléfono: {{ solicitud.usuario.telefono|default:"No proporcionado" }}
+- Ciudad: {{ solicitud.usuario.ciudad|default:"No proporcionada" }}
+
+INFORMACIÓN DE LA MASCOTA:
+- Nombre: {{ solicitud.mascota.nombre }}
+- Tipo: {{ solicitud.mascota.get_tipo_display }}
+- Raza: {{ solicitud.mascota.raza|default:"Mestizo" }}
+- Edad: {{ solicitud.mascota.edad_aproximada }} meses
+- Estado actual: {{ solicitud.mascota.get_estado_adopcion_display }}
+
+DETALLES DE LA SOLICITUD:
+- Número de solicitud: #{{ solicitud.id }}
+- Fecha de solicitud: {{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}
+- Vivienda: {{ solicitud.get_vivienda_display }}
+- Adultos en casa: {{ solicitud.adultos_en_casa }}
+- Niños en casa: {{ solicitud.ninos_en_casa }}
+- Experiencia previa: {{ solicitud.tuvo_mascotas|yesno:"Sí,No" }}
+
+ACCIONES REQUERIDAS:
+1. Revisar la solicitud completa en el panel de administración
+2. Evaluar la idoneidad del solicitante
+3. Contactar al solicitante si es necesario
+4. Actualizar el estado de la solicitud
+
+Nota: Esta solicitud ha cambiado automáticamente el estado de la mascota a "En Proceso".
+
+Saludos,
+Sistema de Notificaciones - Luna & Lía
+
+---
+© 2024 Luna & Lía: Rescatando Huellas
+Este es un correo automático del sistema. 

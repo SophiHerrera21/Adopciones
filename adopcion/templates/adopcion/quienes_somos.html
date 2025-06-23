@@ -1,0 +1,136 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Quiénes Somos - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="quienes-somos-page">
+    <!-- HERO SECTION -->
+    <section class="hero-quienes-somos">
+        <div class="hero-overlay"></div>
+        <div class="container text-center hero-content">
+            <h1 class="display-3 text-white">El Corazón de Nuestra Manada</h1>
+            <p class="lead text-white">Conoce la historia, los valores y las personas que hacen posible nuestra misión de amor y rescate.</p>
+        </div>
+    </section>
+
+    <!-- VALORES SECTION -->
+    <section class="valores-section py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title-dark">Nuestros Pilares</h2>
+                <p class="section-subtitle">Lo que nos impulsa cada día a seguir adelante.</p>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="valor-card">
+                        <div class="valor-icon"><i class="fas fa-bullseye"></i></div>
+                        <h3>Misión</h3>
+                        <p>Rescatar, rehabilitar y encontrar hogares amorosos para animales en situación de vulnerabilidad, promoviendo la adopción responsable y el bienestar animal en nuestra comunidad.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="valor-card">
+                        <div class="valor-icon"><i class="fas fa-eye"></i></div>
+                        <h3>Visión</h3>
+                        <p>Ser una fundación líder y autosostenible, reconocida por nuestro impacto positivo y por crear una sociedad donde todos los animales son respetados, cuidados y amados.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="valor-card">
+                        <div class="valor-icon"><i class="fas fa-heart-pulse"></i></div>
+                        <h3>Valores</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Compromiso</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Empatía</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Transparencia</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Colaboración</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HISTORIA / TIMELINE SECTION -->
+    <section class="historia-section py-5 bg-light-brown">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title-dark">Nuestra Trayectoria</h2>
+                <p class="section-subtitle">Un viaje de amor y dedicación.</p>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-icon"><i class="fas fa-flag"></i></div>
+                    <div class="timeline-content">
+                        <h4>2018 - El Comienzo</h4>
+                        <p>Nace la fundación, con un pequeño grupo de voluntarios y un gran sueño: cambiar la vida de los animales de la calle.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon"><i class="fas fa-home"></i></div>
+                    <div class="timeline-content right">
+                        <h4>2020 - Nuestro Primer Refugio</h4>
+                        <p>Gracias a las donaciones, conseguimos un espacio físico para albergar a nuestros primeros 20 rescatados.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                    <div class="timeline-content">
+                        <h4>2022 - 100 Adopciones Exitosas</h4>
+                        <p>Celebramos haber encontrado un hogar para nuestro rescatado número 100, un hito que nos llenó de energía.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon"><i class="fas fa-star"></i></div>
+                    <div class="timeline-content right">
+                        <h4>Hoy - Mirando al Futuro</h4>
+                        <p>Continuamos creciendo, con nuevos programas de esterilización y educación, buscando siempre nuevas formas de ayudar.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EQUIPO SECTION -->
+    <section class="equipo-section py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title-dark">Conoce al Equipo</h2>
+                <p class="section-subtitle">Las personas detrás de las huellas.</p>
+            </div>
+            <div class="row">
+                {% for miembro in equipo %}
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="equipo-card">
+                        <div class="equipo-img-container">
+                            <img src="{{ miembro.foto }}" alt="{{ miembro.nombre }}" class="img-fluid">
+                        </div>
+                        <div class="equipo-info">
+                            <h5 class="equipo-nombre">{{ miembro.nombre }}</h5>
+                            <p class="equipo-rol">{{ miembro.rol }}</p>
+                            <p class="equipo-descripcion">{{ miembro.descripcion }}</p>
+                            <div class="equipo-social">
+                                <a href="#"><i class="fab fa-twitter"></i></a>
+                                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- IMPACTO / CTA SECTION -->
+    <section class="impacto-section py-5 text-center text-white">
+        <div class="container">
+            <h2 class="display-4">Únete a Nuestra Causa</h2>
+            <p class="lead my-4">Tu apoyo es fundamental para continuar nuestra labor. Cada donación, voluntariado o adopción hace una gran diferencia.</p>
+            <a href="{% url 'donar' %}" class="btn btn-lg btn-light-custom me-2">Hacer una Donación</a>
+            <a href="{% url 'lista_mascotas' %}" class="btn btn-lg btn-outline-light-custom">Adoptar un Amigo</a>
+        </div>
+    </section>
+
+</div>
+{% endblock %} 

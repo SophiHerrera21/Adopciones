@@ -1,0 +1,64 @@
+{% extends 'adopcion/base.html' %}
+
+{% block title %}Detalle de Solicitud - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Detalle de Solicitud</h1>
+        <a href="{% url 'lista_solicitudes' %}" class="btn btn-secondary">Volver a la lista</a>
+    </div>
+    <hr>
+    
+    <div class="row">
+        <!-- Columna de Información -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Información del Formulario</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Tipo de vivienda:</strong> {{ solicitud.get_vivienda_display }}</p>
+                    <p><strong>¿La vivienda es propia?:</strong> {{ solicitud.es_propia|yesno:"Sí,No" }}</p>
+                    <p><strong>¿Por qué desea adoptar?:</strong> {{ solicitud.motivo_adopcion }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna de Acciones y Datos -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Datos Generales</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Mascota:</strong> <a href="#">{{ solicitud.mascota.nombre }}</a></p>
+                    <p><strong>Solicitante:</strong> <a href="#">{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}</a></p>
+                    <p><strong>Email:</strong> {{ solicitud.usuario.email }}</p>
+                    <p><strong>Fecha:</strong> {{ solicitud.fecha_solicitud|date:"d M, Y, H:i" }}</p>
+                    <p><strong>Estado:</strong> <span class="badge bg-info">{{ solicitud.get_estado_solicitud_display }}</span></p>
+                </div>
+            </div>
+
+            {% if solicitud.estado_solicitud == 'pendiente' %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>Acciones</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p>¿Qué deseas hacer con esta solicitud?</p>
+                    <form method="POST" action="{% url 'actualizar_estado_solicitud' solicitud.id 'aprobada' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">Aprobar</button>
+                    </form>
+                    <form method="POST" action="{% url 'actualizar_estado_solicitud' solicitud.id 'rechazada' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Rechazar</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

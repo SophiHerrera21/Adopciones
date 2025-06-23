@@ -1,0 +1,308 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Agregar Peludo - Luna & Lia{% endblock %}
+
+{% block content %}
+<div class="add-pet-container">
+    <!-- Header -->
+    <div class="add-pet-header">
+        <div class="container">
+            <h1 class="add-pet-title">
+                <i class="fas fa-plus-circle"></i>
+                Agregar Nuevo Peludo
+            </h1>
+            <p class="add-pet-subtitle">Registra un nuevo peludo en la fundación</p>
+            
+            <!-- Contador de peludos -->
+            <div class="peludos-summary">
+                <div class="summary-item">
+                    <span class="summary-number">{{ peludos_en_fundacion }}</span>
+                    <span class="summary-label">Peludos en la Fundación</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-number">{{ peludos_adoptados }}</span>
+                    <span class="summary-label">Peludos Adoptados</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="add-pet-form-section">
+        <div class="container">
+            <div class="form-container">
+                <form method="post" enctype="multipart/form-data" class="add-pet-form">
+                    {% csrf_token %}
+                    
+                    <!-- Información Básica -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Información Básica
+                        </h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                    <div class="error-message">{{ form.nombre.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.tipo.id_for_label }}">{{ form.tipo.label }}</label>
+                                {{ form.tipo }}
+                                {% if form.tipo.errors %}
+                                    <div class="error-message">{{ form.tipo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.raza.id_for_label }}">{{ form.raza.label }}</label>
+                                {{ form.raza }}
+                                {% if form.raza.errors %}
+                                    <div class="error-message">{{ form.raza.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.edad_aproximada.id_for_label }}">{{ form.edad_aproximada.label }}</label>
+                                {{ form.edad_aproximada }}
+                                <div class="field-help">Edad en meses (1-204 meses, máximo 17 años)</div>
+                                {% if form.edad_aproximada.errors %}
+                                    <div class="error-message">{{ form.edad_aproximada.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.sexo.id_for_label }}">{{ form.sexo.label }}</label>
+                                {{ form.sexo }}
+                                {% if form.sexo.errors %}
+                                    <div class="error-message">{{ form.sexo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.tamaño.id_for_label }}">{{ form.tamaño.label }}</label>
+                                {{ form.tamaño }}
+                                {% if form.tamaño.errors %}
+                                    <div class="error-message">{{ form.tamaño.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.peso.id_for_label }}">{{ form.peso.label }}</label>
+                                {{ form.peso }}
+                                <div class="field-help">Peso en kilogramos (0.01-200 kg)</div>
+                                {% if form.peso.errors %}
+                                    <div class="error-message">{{ form.peso.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.color.id_for_label }}">{{ form.color.label }}</label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                    <div class="error-message">{{ form.color.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Foto del Peludo -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-camera"></i>
+                            Foto del Peludo
+                        </h3>
+                        <div class="image-upload-container">
+                            <div class="form-group full-width">
+                                <label for="{{ form.imagen_principal.id_for_label }}">{{ form.imagen_principal.label }}</label>
+                                {{ form.imagen_principal }}
+                                <div class="image-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    {{ form.imagen_principal.help_text }}
+                                </div>
+                                {% if form.imagen_principal.errors %}
+                                    <div class="error-message">{{ form.imagen_principal.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="image-preview" id="imagePreview" style="display: none;">
+                                <img id="previewImg" src="" alt="Vista previa">
+                                <div class="preview-info">
+                                    <span id="fileName"></span>
+                                    <span id="fileSize"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Descripción y Personalidad -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-heart"></i>
+                            Descripción y Personalidad
+                        </h3>
+                        <div class="form-group full-width">
+                            <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            <div class="field-help">{{ form.descripcion.help_text }}</div>
+                            {% if form.descripcion.errors %}
+                                <div class="error-message">{{ form.descripcion.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="{{ form.personalidad.id_for_label }}">{{ form.personalidad.label }}</label>
+                            {{ form.personalidad }}
+                            <div class="field-help">{{ form.personalidad.help_text }}</div>
+                            {% if form.personalidad.errors %}
+                                <div class="error-message">{{ form.personalidad.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Estado de Salud -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-stethoscope"></i>
+                            Estado de Salud
+                        </h3>
+                        <div class="form-group full-width">
+                            <label for="{{ form.estado_salud.id_for_label }}">{{ form.estado_salud.label }}</label>
+                            {{ form.estado_salud }}
+                            <div class="field-help">{{ form.estado_salud.help_text }}</div>
+                            {% if form.estado_salud.errors %}
+                                <div class="error-message">{{ form.estado_salud.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="{{ form.necesidades_especiales.id_for_label }}">{{ form.necesidades_especiales.label }}</label>
+                            {{ form.necesidades_especiales }}
+                            <div class="field-help">{{ form.necesidades_especiales.help_text }}</div>
+                            {% if form.necesidades_especiales.errors %}
+                                <div class="error-message">{{ form.necesidades_especiales.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    {{ form.vacunas_completas }}
+                                    <span class="checkmark"></span>
+                                    {{ form.vacunas_completas.label }}
+                                </label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    {{ form.esterilizado }}
+                                    <span class="checkmark"></span>
+                                    {{ form.esterilizado.label }}
+                                </label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    {{ form.microchip }}
+                                    <span class="checkmark"></span>
+                                    {{ form.microchip.label }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado de Adopción -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-home"></i>
+                            Estado de Adopción
+                        </h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.estado_adopcion.id_for_label }}">{{ form.estado_adopcion.label }}</label>
+                                {{ form.estado_adopcion }}
+                                {% if form.estado_adopcion.errors %}
+                                    <div class="error-message">{{ form.estado_adopcion.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.fecha_ingreso.id_for_label }}">{{ form.fecha_ingreso.label }}</label>
+                                {{ form.fecha_ingreso }}
+                                {% if form.fecha_ingreso.errors %}
+                                    <div class="error-message">{{ form.fecha_ingreso.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Registrar Peludo
+                        </button>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Volver al Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Vista previa de imagen
+document.getElementById('{{ form.imagen_principal.id_for_label }}').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    
+    if (file) {
+        // Mostrar información del archivo
+        fileName.textContent = file.name;
+        fileSize.textContent = `(${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        
+        // Crear vista previa
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+});
+
+// Validación en tiempo real
+document.querySelectorAll('.add-pet-form input, .add-pet-form textarea, .add-pet-form select').forEach(function(element) {
+    element.addEventListener('blur', function() {
+        if (this.hasAttribute('required') && !this.value.trim()) {
+            this.classList.add('error');
+        } else {
+            this.classList.remove('error');
+        }
+    });
+});
+
+// Limitar fecha de ingreso a hoy o antes
+window.addEventListener('DOMContentLoaded', function() {
+    var fechaInput = document.getElementById('{{ form.fecha_ingreso.id_for_label }}');
+    if (fechaInput) {
+        var today = new Date();
+        var yyyy = today.getFullYear();
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var dd = String(today.getDate()).padStart(2, '0');
+        var maxDate = yyyy + '-' + mm + '-' + dd;
+        fechaInput.setAttribute('max', maxDate);
+    }
+});
+</script>
+{% endblock %} 

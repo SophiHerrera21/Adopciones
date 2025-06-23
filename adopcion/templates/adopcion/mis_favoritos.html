@@ -1,0 +1,199 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Mis Favoritos - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <span class="text-danger">❤️</span> Mis Mascotas Favoritas
+            </h1>
+            
+            <!-- Filtros de búsqueda -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros de Favoritos</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="get" id="filtrosForm">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label for="tipo" class="form-label">Tipo de Mascota</label>
+                                        <select class="form-select" id="tipo" name="tipo">
+                                            <option value="">Todos los tipos</option>
+                                            <option value="perro" {% if filtros_activos.tipo == 'perro' %}selected{% endif %}>Perros</option>
+                                            <option value="gato" {% if filtros_activos.tipo == 'gato' %}selected{% endif %}>Gatos</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="edad" class="form-label">Rango de Edad</label>
+                                        <select class="form-select" id="edad" name="edad">
+                                            <option value="">Todas las edades</option>
+                                            <option value="2-12" {% if filtros_activos.edad == '2-12' %}selected{% endif %}>2 - 12 meses</option>
+                                            <option value="13-24" {% if filtros_activos.edad == '13-24' %}selected{% endif %}>13 - 24 meses</option>
+                                            <option value="25-48" {% if filtros_activos.edad == '25-48' %}selected{% endif %}>25 - 48 meses</option>
+                                            <option value="49+" {% if filtros_activos.edad == '49+' %}selected{% endif %}>49 meses en adelante</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="estado" class="form-label">Estado</label>
+                                        <select class="form-select" id="estado" name="estado">
+                                            <option value="">Todos los estados</option>
+                                            <option value="disponible" {% if filtros_activos.estado == 'disponible' %}selected{% endif %}>Disponible</option>
+                                            <option value="en_proceso" {% if filtros_activos.estado == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                                            <option value="adoptado" {% if filtros_activos.estado == 'adoptado' %}selected{% endif %}>Adoptado</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3 d-flex align-items-end">
+                                        <div class="d-grid gap-2 w-100">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-search me-2"></i>Filtrar
+                                            </button>
+                                            <a href="{% url 'mis_favoritos' %}" class="btn btn-outline-secondary">
+                                                <i class="fas fa-times me-2"></i>Limpiar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <!-- Mostrar filtros activos -->
+                            {% if filtros_activos.tipo or filtros_activos.edad or filtros_activos.estado %}
+                            <div class="mt-3">
+                                <h6>Filtros activos:</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if filtros_activos.tipo %}
+                                    <span class="badge bg-primary">
+                                        Tipo: {{ filtros_activos.tipo|title }}
+                                        <a href="?{% if filtros_activos.edad %}edad={{ filtros_activos.edad }}{% endif %}{% if filtros_activos.estado %}{% if filtros_activos.edad %}&{% endif %}estado={{ filtros_activos.estado }}{% endif %}" class="text-white text-decoration-none ms-1">×</a>
+                                    </span>
+                                    {% endif %}
+                                    {% if filtros_activos.edad %}
+                                    <span class="badge bg-info">
+                                        Edad: 
+                                        {% if filtros_activos.edad == '2-12' %}2 - 12 meses
+                                        {% elif filtros_activos.edad == '13-24' %}13 - 24 meses
+                                        {% elif filtros_activos.edad == '25-48' %}25 - 48 meses
+                                        {% elif filtros_activos.edad == '49+' %}49 meses en adelante
+                                        {% endif %}
+                                        <a href="?{% if filtros_activos.tipo %}tipo={{ filtros_activos.tipo }}{% endif %}{% if filtros_activos.estado %}{% if filtros_activos.tipo %}&{% endif %}estado={{ filtros_activos.estado }}{% endif %}" class="text-white text-decoration-none ms-1">×</a>
+                                    </span>
+                                    {% endif %}
+                                    {% if filtros_activos.estado %}
+                                    <span class="badge bg-warning text-dark">
+                                        Estado: {{ filtros_activos.estado|title }}
+                                        <a href="?{% if filtros_activos.tipo %}tipo={{ filtros_activos.tipo }}{% endif %}{% if filtros_activos.edad %}{% if filtros_activos.tipo %}&{% endif %}edad={{ filtros_activos.edad }}{% endif %}" class="text-dark text-decoration-none ms-1">×</a>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if mascotas %}
+                <div class="row">
+                    {% for mascota in mascotas %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            {% if mascota.fotos.all %}
+                                <img src="{{ mascota.fotos.first.url_foto.url }}" 
+                                     class="card-img-top pet-image" 
+                                     style="height: 250px; object-fit: cover;" 
+                                     alt="{{ mascota.nombre }}">
+                            {% elif mascota.imagen_principal %}
+                                <img src="{{ mascota.imagen_principal.url }}" 
+                                     class="card-img-top pet-image" 
+                                     style="height: 250px; object-fit: cover;" 
+                                     alt="{{ mascota.nombre }}">
+                            {% else %}
+                                <img src="{% static 'images/default-pet.png' %}" 
+                                     class="card-img-top pet-image" 
+                                     style="height: 250px; object-fit: cover;" 
+                                     alt="Sin fotos disponibles">
+                            {% endif %}
+                            
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">{{ mascota.nombre }}</h5>
+                                <p class="card-text text-muted">
+                                    {{ mascota.get_tipo_display }} • {{ mascota.get_sexo_display }} • {{ mascota.edad_aproximada }} meses
+                                </p>
+                                <p class="card-text">{{ mascota.descripcion|truncatewords:20 }}</p>
+                                
+                                <!-- Estado de adopción -->
+                                <div class="mb-3">
+                                    {% if mascota.estado_adopcion == 'disponible' %}
+                                        <span class="badge bg-success">Disponible</span>
+                                    {% elif mascota.estado_adopcion == 'en_proceso' %}
+                                        <span class="badge bg-warning text-dark">En Proceso</span>
+                                    {% elif mascota.estado_adopcion == 'adoptado' %}
+                                        <span class="badge bg-secondary">Adoptado</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">No Disponible</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    <a href="{% url 'mascota_detalle' mascota.id %}" class="btn btn-outline-primary btn-sm">
+                                        Ver Detalles
+                                    </a>
+                                    
+                                    {% if mascota.estado_adopcion == 'disponible' %}
+                                        <a href="{% url 'solicitar_adopcion' mascota.id %}" class="btn btn-primary btn-sm">
+                                            Solicitar Adopción
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <span style="font-size: 4rem;">🤍</span>
+                    </div>
+                    <h3>No tienes mascotas favoritas{% if filtros_activos.tipo or filtros_activos.edad or filtros_activos.estado %} con estos filtros{% endif %}</h3>
+                    <p class="text-muted">
+                        {% if filtros_activos.tipo or filtros_activos.edad or filtros_activos.estado %}
+                            Intenta con otros filtros o explora nuestras mascotas disponibles.
+                        {% else %}
+                            Explora nuestras mascotas disponibles y agrega a tus favoritos
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'inicio' %}" class="btn btn-primary">
+                        Ver Mascotas Disponibles
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit del formulario de filtros cuando cambien los selects
+    document.querySelectorAll('#filtrosForm select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            document.getElementById('filtrosForm').submit();
+        });
+    });
+    
+    // Mostrar contador de resultados
+    const mascotasCount = document.querySelectorAll('.col-md-6.col-lg-4.mb-4 .card').length;
+    if (mascotasCount > 0) {
+        const resultsInfo = document.createElement('div');
+        resultsInfo.className = 'alert alert-info mt-3';
+        resultsInfo.innerHTML = `<i class="fas fa-info-circle me-2"></i>Se encontraron ${mascotasCount} mascota${mascotasCount !== 1 ? 's' : ''} favorita${mascotasCount !== 1 ? 's' : ''} con los filtros aplicados.`;
+        document.querySelector('.row:last-child').insertBefore(resultsInfo, document.querySelector('.row:last-child').firstChild);
+    }
+});
+</script>
+{% endblock %} 

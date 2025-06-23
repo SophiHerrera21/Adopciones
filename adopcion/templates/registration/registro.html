@@ -1,0 +1,29 @@
+{% extends 'adopcion/base.html' %}
+
+{% block title %}Registrarse - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title text-center">Crear una Cuenta</h3>
+                    <p class="text-center text-muted">Únete a nuestra comunidad y ayúdanos a cambiar vidas.</p>
+                    <hr>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary mt-3">Registrarse</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center">
+                    <small>¿Ya tienes una cuenta? <a href="{% url 'login' %}">Inicia Sesión aquí</a>.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

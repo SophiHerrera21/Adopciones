@@ -1,0 +1,338 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Mi Perfil - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-4">
+                <div class="user-avatar-large me-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #d38d44, #e5cd6c); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 2rem;">
+                    {{ user.nombre|default:user.username|first|upper }}
+                </div>
+                <div>
+                    <h2 class="mb-1">{{ user.nombre|default:user.username }}</h2>
+                    <p class="text-muted mb-0">{{ user.email }}</p>
+                    <small class="text-muted">Miembro desde {{ user.date_joined|date:"d/m/Y" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil" type="button" role="tab">
+                <i class="fas fa-user me-2"></i>Editar Perfil
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="solicitudes-tab" data-bs-toggle="tab" data-bs-target="#solicitudes" type="button" role="tab">
+                <i class="fas fa-heart me-2"></i>Mis Solicitudes ({{ solicitudes.count }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="donaciones-tab" data-bs-toggle="tab" data-bs-target="#donaciones" type="button" role="tab">
+                <i class="fas fa-hand-holding-heart me-2"></i>Mis Donaciones ({{ donaciones.count }})
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de las Pestañas -->
+    <div class="tab-content" id="myTabContent">
+        <!-- Pestaña de Editar Perfil -->
+        <div class="tab-pane fade show active" id="perfil" role="tabpanel" tabindex="0">
+            <div class="card card-body mt-3">
+                <h4 class="card-title mb-3">Información Personal</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre *</label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                    <div class="text-danger">{{ form.nombre.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.apellido.id_for_label }}" class="form-label">Apellido *</label>
+                                {{ form.apellido }}
+                                {% if form.apellido.errors %}
+                                    <div class="text-danger">{{ form.apellido.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
+                                {{ form.telefono }}
+                                {% if form.telefono.errors %}
+                                    <div class="text-danger">{{ form.telefono.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.direccion.id_for_label }}" class="form-label">Dirección</label>
+                        {{ form.direccion }}
+                        {% if form.direccion.errors %}
+                            <div class="text-danger">{{ form.direccion.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.ciudad.id_for_label }}" class="form-label">Ciudad</label>
+                        {{ form.ciudad }}
+                        {% if form.ciudad.errors %}
+                            <div class="text-danger">{{ form.ciudad.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Pestaña de Mis Solicitudes -->
+        <div class="tab-pane fade" id="solicitudes" role="tabpanel" tabindex="0">
+            <div class="card card-body mt-3">
+                {% if solicitudes %}
+                    <h4 class="card-title mb-3">Historial de Solicitudes</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mascota</th>
+                                    <th>Fecha de Solicitud</th>
+                                    <th>Estado</th>
+                                    <th>Respuesta</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for solicitud in solicitudes %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if solicitud.mascota.imagen_principal %}
+                                                <img src="{{ solicitud.mascota.imagen_principal.url }}" 
+                                                     class="profile-pet-image" 
+                                                     alt="{{ solicitud.mascota.nombre }}">
+                                            {% else %}
+                                                <div class="profile-pet-image image-placeholder d-flex align-items-center justify-content-center">
+                                                    <i class="fas fa-paw"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div class="ms-2">
+                                                <strong>{{ solicitud.mascota.nombre }}</strong><br>
+                                                <small class="text-muted">{{ solicitud.mascota.get_tipo_display }} • {{ solicitud.mascota.get_sexo_display }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if solicitud.estado_solicitud == 'aprobada' %}
+                                            <span class="badge bg-success">{{ solicitud.get_estado_solicitud_display }}</span>
+                                        {% elif solicitud.estado_solicitud == 'rechazada' %}
+                                            <span class="badge bg-danger">{{ solicitud.get_estado_solicitud_display }}</span>
+                                        {% elif solicitud.estado_solicitud == 'en_revision' %}
+                                            <span class="badge bg-info">{{ solicitud.get_estado_solicitud_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">{{ solicitud.get_estado_solicitud_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if solicitud.fecha_respuesta %}
+                                            <small class="text-muted">{{ solicitud.fecha_respuesta|date:"d/m/Y H:i" }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Pendiente</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'mascota_detalle' solicitud.mascota.id %}" class="btn btn-sm btn-outline-primary">
+                                            Ver Mascota
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <span style="font-size: 4rem;">🐾</span>
+                        </div>
+                        <h4>No tienes solicitudes aún</h4>
+                        <p class="text-muted">¡Explora nuestras mascotas disponibles y encuentra a tu nuevo mejor amigo!</p>
+                        <a href="{% url 'inicio' %}" class="btn btn-primary">
+                            Ver Mascotas Disponibles
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pestaña de Mis Donaciones -->
+        <div class="tab-pane fade" id="donaciones" role="tabpanel" tabindex="0">
+            <div class="card card-body mt-3">
+                {% if donaciones %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h4 class="card-title mb-0">Historial de Mis Donaciones</h4>
+                        <form action="{% url 'mi_reporte_donaciones' %}" method="get" class="d-flex align-items-center gap-2" target="_blank">
+                            <label class="mb-0 me-2">Reporte mensual:</label>
+                            <select name="mes" class="form-select form-select-sm">
+                                <option value="">Mes</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                            <input type="number" name="año" class="form-control form-control-sm" placeholder="Año" min="2020" max="2100" style="width:90px;">
+                            <button type="submit" class="btn btn-lg btn-success d-flex align-items-center gap-2 shadow">
+                                <img src="{% static 'images/logo.svg' %}" alt="Logo" style="height: 2rem;">
+                                <i class="fas fa-file-invoice-dollar fa-lg"></i>
+                                <span>Descargar Reporte</span>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Detalle</th>
+                                    <th>Fecha</th>
+                                    <th>Monto/Categoría</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for donacion in donaciones %}
+                                <tr>
+                                    <td>
+                                        {% if donacion.tipo_donacion == 'monetaria' %}
+                                            <span class="badge bg-primary">{{ donacion.get_tipo_donacion_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ donacion.get_tipo_donacion_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if donacion.tipo_donacion == 'monetaria' %}
+                                            <strong>${% if donacion.monto %}{{ donacion.monto|floatformat:0 }}{% else %}0{% endif %}</strong><br>
+                                            <small class="text-muted">{{ donacion.get_medio_pago_display }}</small>
+                                        {% else %}
+                                            <strong>{{ donacion.get_categoria_insumo_display }}</strong><br>
+                                            <small class="text-muted">{{ donacion.descripcion_insumo|truncatechars:50 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ donacion.fecha_donacion|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if donacion.tipo_donacion == 'monetaria' %}
+                                            <span class="text-success fw-bold">${% if donacion.monto %}{{ donacion.monto|floatformat:0 }}{% else %}0{% endif %}</span>
+                                        {% else %}
+                                            <span class="text-info">{{ donacion.get_categoria_insumo_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Resumen de donaciones -->
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="card text-center border-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">{{ donaciones.count }}</h5>
+                                    <p class="card-text">Total de Donaciones</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-center border-success">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success">
+                                        ${% for donacion in donaciones %}{% if donacion.tipo_donacion == 'monetaria' and donacion.monto %}{{ donacion.monto }}{% endif %}{% endfor %}
+                                    </h5>
+                                    <p class="card-text">Total Donado</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-center border-info">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">{{ donaciones|length }}</h5>
+                                    <p class="card-text">Última: {{ donaciones.first.fecha_donacion|date:"d/m/Y" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <span style="font-size: 4rem;">💝</span>
+                        </div>
+                        <h4>No tienes donaciones aún</h4>
+                        <p class="text-muted">¡Tu apoyo hace posible que continuemos rescatando y cuidando a más mascotas!</p>
+                        <a href="{% url 'donar' %}" class="btn btn-success">
+                            <i class="fas fa-hand-holding-heart me-2"></i>Hacer Mi Primera Donación
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-tabs .nav-link {
+    color: #8c6239;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #8c6239;
+    background-color: transparent;
+    border-bottom: 2px solid #8c6239;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    border-bottom: 2px solid #d38d44;
+}
+
+.form-control, .form-select {
+    border-color: #e5cd6c;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #8c6239;
+    box-shadow: 0 0 0 0.2rem rgba(140, 98, 57, 0.25);
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Bienvenido</title>
+</head>
+<body style="font-family: sans-serif; background-color: #fdfaf3; color: #4b3f36; padding: 20px;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e5cd6c;">
+        <tr>
+            <td style="background-color: #8c6239; color: white; padding: 20px; text-align: center;">
+                <h1>¡Bienvenido a Luna & Lía!</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px 20px;">
+                <h2 style="color: #d38d44;">Hola, {{ usuario.nombre }}</h2>
+                <p>Te damos una calurosa bienvenida a la comunidad de <strong>Luna & Lía: Rescatando Huellas</strong>. Estamos muy felices de que te unas a nuestra causa.</p>
+                <p>Gracias a tu apoyo, podemos seguir rescatando, rehabilitando y buscando hogares amorosos para cientos de perros y gatos.</p>
+                <p>Ahora puedes explorar las mascotas que esperan por un hogar, hacer donaciones o aprender más sobre nuestra misión. ¡Cada pequeña acción cuenta!</p>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'inicio' %}" style="background-color: #d38d44; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visitar el Sitio Web</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #f2f2f2; text-align: center; padding: 15px; font-size: 12px; color: #888;">
+                <p>Recibiste este correo porque te registraste en nuestro sitio web.</p>
+                <p>&copy; {% now "Y" %} Luna & Lía: Rescatando Huellas. Todos los derechos reservados.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html> 

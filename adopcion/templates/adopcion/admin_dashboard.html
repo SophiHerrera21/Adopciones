@@ -1,0 +1,317 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Panel de Administración - Luna & Lía{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    .activity-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .activity-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .activity-time {
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .admin-pet-image {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .image-placeholder {
+        width: 40px;
+        height: 40px;
+        background-color: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Panel de Administración</h2>
+    
+    <!-- Fila de Estadísticas Principales -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Mascotas Disponibles</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mascotas_disponibles }} / {{ total_mascotas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-paw fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card">
+                <h5><i class="fas fa-users me-2"></i>Usuarios Registrados</h5>
+                <p class="fs-2 mb-0">{{ total_usuarios }}</p>
+                <small>Miembros activos</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card">
+                <h5><i class="fas fa-file-alt me-2"></i>Solicitudes Pendientes</h5>
+                <p class="fs-2 mb-0">{{ solicitudes_pendientes }}</p>
+                <small>Por revisar</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card">
+                <h5><i class="fas fa-hand-holding-heart me-2"></i>Total Donado</h5>
+                <p class="fs-2 mb-0">${{ total_donado|floatformat:0 }}</p>
+                <small>Donaciones monetarias</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fila para Gráficas -->
+    <div class="row mt-4">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white"><h5 class="mb-0"><i class="fas fa-paw me-2"></i>Estado de Mascotas</h5></div>
+                <div class="card-body d-flex justify-content-center align-items-center p-3">
+                    <canvas id="mascotasChart" style="position: relative; height:300px; width:100%"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white"><h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Solicitudes de Adopción</h5></div>
+                <div class="card-body d-flex justify-content-center align-items-center p-3">
+                    <canvas id="solicitudesChart" style="position: relative; height:300px; width:100%"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark"><h5 class="mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Donaciones por Categoría</h5></div>
+                <div class="card-body d-flex justify-content-center align-items-center p-3">
+                    <canvas id="donacionesChart" style="position: relative; height:300px; width:100%"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fila para Actividad Reciente -->
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <h4><i class="fas fa-clock me-2"></i>Últimas Mascotas Registradas</h4>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Foto</th>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th>Fecha Ingreso</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mascota in ultimas_mascotas %}
+                        <tr>
+                            <td><img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}" class="admin-pet-image"></td>
+                            <td>{{ mascota.nombre }}</td>
+                            <td><span class="badge bg-info text-dark">{{ mascota.get_estado_display }}</span></td>
+                            <td>{{ mascota.fecha_ingreso|date:"d/m/Y" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'editar_mascota' mascota.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center p-4">No hay mascotas registradas recientemente.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <h4><i class="fas fa-file-alt me-2"></i>Últimas Solicitudes</h4>
+            <div class="activity-card">
+                {% for solicitud in ultimas_solicitudes %}
+                <div class="activity-item">
+                    <div>
+                        <strong>{{ solicitud.mascota.nombre }}</strong><br>
+                        <small>{{ solicitud.usuario.nombre }} • {{ solicitud.get_estado_solicitud_display }}</small>
+                    </div>
+                    <div class="activity-time">{{ solicitud.fecha_solicitud|date:"d/m H:i" }}</div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No hay solicitudes recientes</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <section class="quick-actions">
+        <div class="container">
+            <h2 class="section-title">Acciones Rápidas</h2>
+            <div class="actions-grid">
+                <a href="{% url 'agregar_mascota' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="action-title">Agregar Peludo</div>
+                    <div class="action-description">Registrar una nueva mascota en la fundación</div>
+                </a>
+                <a href="{% url 'lista_solicitudes' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div class="action-title">Ver Solicitudes</div>
+                    <div class="action-description">Revisar solicitudes de adopción</div>
+                </a>
+                <a href="{% url 'donar' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="action-title">Nueva Donación</div>
+                    <div class="action-description">Registrar una donación</div>
+                </a>
+                <a href="{% url 'quienes_somos' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="action-title">Información</div>
+                    <div class="action-description">Ver información de la fundación</div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Últimas Solicitudes -->
+    <h4><i class="fas fa-list me-2"></i>Últimas Solicitudes de Adopción</h4>
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Mascota</th>
+                        <th>Solicitante</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in ultimas_solicitudes %}
+                    <tr>
+                        <td>{{ solicitud.mascota.nombre }}</td>
+                        <td>{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}</td>
+                        <td>{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if solicitud.estado_solicitud == 'aprobada' %}
+                                <span class="badge bg-success">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% elif solicitud.estado_solicitud == 'rechazada' %}
+                                <span class="badge bg-danger">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% elif solicitud.estado_solicitud == 'en_revision' %}
+                                <span class="badge bg-info">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% else %}
+                                <span class="badge bg-warning">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalle_solicitud' solicitud.id %}" class="btn btn-sm btn-outline-primary">Revisar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No hay solicitudes pendientes.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="text-end">
+                <a href="{% url 'lista_solicitudes' %}" class="btn btn-outline-primary">Ver todas las solicitudes</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function createPieChart(canvasId, data, label) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        const chartData = JSON.parse(data);
+
+        const backgroundColors = ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d', '#fd7e14'];
+        const borderColors = backgroundColors.map(color => color.replace('0.8', '1'));
+
+        new Chart(ctx.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: Object.keys(chartData),
+                datasets: [{
+                    label: label,
+                    data: Object.values(chartData),
+                    backgroundColor: backgroundColors,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+
+    createPieChart('mascotasChart', '{{ mascotas_data_json|escapejs }}', 'Mascotas');
+    createPieChart('solicitudesChart', '{{ solicitudes_data_json|escapejs }}', 'Solicitudes');
+    createPieChart('donacionesChart', '{{ donaciones_data_json|escapejs }}', 'Donaciones');
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,114 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Inicio - Luna & Lia{% endblock %}
+
+{% block content %}
+<!-- Hero Section con contador de peludos -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Encuentra tu compañero perfecto</h1>
+        <p class="hero-subtitle">Damos hogar a mascotas que necesitan amor y cuidado</p>
+        
+        <!-- Contador de peludos en la fundación -->
+        <div class="peludos-counter">
+            <div class="counter-item">
+                <span class="counter-number">{{ peludos_en_fundacion }}</span>
+                <span class="counter-label">Peludos en la Fundación</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-number">{{ peludos_adoptados }}</span>
+                <span class="counter-label">Peludos Adoptados</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-number">{{ total_mascotas }}</span>
+                <span class="counter-label">Total de Peludos</span>
+            </div>
+        </div>
+        
+        <div class="hero-buttons">
+            <a href="{% url 'lista_mascotas' %}" class="btn btn-primary">Ver Mascotas</a>
+            <a href="{% url 'donar' %}" class="btn btn-secondary">Hacer Donación</a>
+        </div>
+    </div>
+</section>
+
+<!-- Sección de estadísticas -->
+<section class="stats-section">
+    <div class="container">
+        <h2 class="section-title">Nuestros Peludos</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🐕</div>
+                <div class="stat-number">{{ perros_disponibles }}</div>
+                <div class="stat-label">Perros Disponibles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🐱</div>
+                <div class="stat-number">{{ gatos_disponibles }}</div>
+                <div class="stat-label">Gatos Disponibles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏠</div>
+                <div class="stat-number">{{ peludos_adoptados }}</div>
+                <div class="stat-label">Hogares Encontrados</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Carrusel de mascotas destacadas -->
+<section class="featured-pets">
+    <div class="container">
+        <h2 class="section-title">Peludos Destacados</h2>
+        <div class="pets-carousel">
+            {% for mascota in mascotas_disponibles %}
+            <div class="pet-card">
+                <div class="pet-image-container">
+                    <img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}" class="pet-image">
+                    <div class="pet-overlay">
+                        <a href="{% url 'mascota_detalle' mascota.id %}" class="btn btn-primary">Ver Detalles</a>
+                    </div>
+                </div>
+                <div class="pet-info">
+                    <h3 class="pet-name">{{ mascota.nombre }}</h3>
+                    <p class="pet-details">
+                        <span class="pet-type">{{ mascota.get_tipo_display }}</span> • 
+                        <span class="pet-age">{{ mascota.edad_aproximada }} meses</span> • 
+                        <span class="pet-size">{{ mascota.get_tamaño_display }}</span>
+                    </p>
+                    <p class="pet-description">{{ mascota.descripcion|truncatewords:10 }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-pets-message">
+                <p>No hay mascotas disponibles en este momento.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Sección de información -->
+<section class="info-section">
+    <div class="container">
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-icon">❤️</div>
+                <h3>Adopción Responsable</h3>
+                <p>Encuentra tu compañero perfecto y dale un hogar lleno de amor y cuidado.</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">🏥</div>
+                <h3>Cuidado Veterinario</h3>
+                <p>Todas nuestras mascotas reciben atención médica completa antes de la adopción.</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">🤝</div>
+                <h3>Seguimiento</h3>
+                <p>Te acompañamos durante todo el proceso de adopción y después.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

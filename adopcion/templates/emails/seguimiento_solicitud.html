@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Seguimiento de tu Solicitud de Adopción</title>
+</head>
+<body style="font-family: sans-serif; background-color: #fdfaf3; color: #4b3f36; padding: 20px;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e5cd6c;">
+        <tr>
+            <td style="background-color: #8c6239; color: white; padding: 20px; text-align: center;">
+                <h1>Seguimos revisando tu solicitud</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px 20px;">
+                <h2 style="color: #d38d44;">Hola, {{ solicitud.usuario.nombre }}</h2>
+                <p>Queremos informarte que tu solicitud para adoptar a <strong>{{ solicitud.mascota.nombre }}</strong> sigue en proceso de revisión.</p>
+                <p>Sabemos que la espera puede ser difícil, pero nuestro equipo está trabajando para darte una respuesta lo antes posible.</p>
+                <p>Si tienes alguna pregunta, no dudes en responder a este correo o contactarnos a través de nuestros canales oficiales.</p>
+                <p>¡Gracias por tu paciencia y por querer darle un hogar a una mascota rescatada!</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #f2f2f2; text-align: center; padding: 15px; font-size: 12px; color: #888;">
+                <p>&copy; {% now "Y" %} Luna & Lía: Rescatando Huellas.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html> 

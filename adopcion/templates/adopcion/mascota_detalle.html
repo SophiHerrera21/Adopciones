@@ -1,0 +1,127 @@
+{% extends "adopcion/base.html" %}
+{% load static %}
+
+{% block title %}{{ mascota.nombre }} - Detalles{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Columna de la Imagen -->
+        <div class="col-md-6 mb-4">
+            <div class="pet-image-gallery">
+                {% if mascota.imagen_principal %}
+                    <img src="{{ mascota.imagen_principal.url }}" 
+                         alt="Foto principal de {{ mascota.nombre }}" 
+                         class="mascota-detail-image">
+                {% else %}
+                    <div class="mascota-detail-image image-placeholder">
+                        <i class="fas fa-paw"></i>
+                        <span class="ms-2">Sin foto disponible</span>
+                    </div>
+                {% endif %}
+                <!-- Aquí se podrían añadir miniaturas de otras fotos si el modelo las tuviera -->
+            </div>
+        </div>
+
+        <!-- Columna de la Información -->
+        <div class="col-md-6">
+            <div class="pet-details">
+                <h1 class="display-5">{{ mascota.nombre }}</h1>
+                <p class="lead text-muted">{{ mascota.descripcion }}</p>
+
+                <div class="d-grid gap-2 my-4">
+                    <a href="{% url 'solicitar_adopcion' mascota.id %}" class="btn btn-primary-custom btn-lg">Solicitar Adopción</a>
+                    {% if user.is_authenticated %}
+                        <button class="btn btn-secondary-custom" id="btn-favorito" data-mascota-id="{{ mascota.id }}">
+                            {% if es_favorito %}
+                                <i class="fas fa-heart"></i> Quitar de Favoritos
+                            {% else %}
+                                <i class="far fa-heart"></i> Agregar a Favoritos
+                            {% endif %}
+                        </button>
+                    {% else %}
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-secondary-custom">Inicia sesión para agregar a favoritos</a>
+                    {% endif %}
+                </div>
+
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between"><strong>Especie:</strong> <span>{{ mascota.get_especie_display }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Raza:</strong> <span>{{ mascota.raza|default:"Mestizo" }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Edad:</strong> <span>{{ mascota.edad_aproximada }} meses</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Sexo:</strong> <span>{{ mascota.get_sexo_display }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Tamaño:</strong> <span>{{ mascota.get_tamano_display }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Personalidad:</strong> <span>{{ mascota.personalidad|default:"No especificada" }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Salud:</strong> <span>{{ mascota.estado_salud }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Esterilizado:</strong> <span>{% if mascota.esterilizado %}Sí{% else %}No{% endif %}</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast para mostrar mensajes -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toastFavorito" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Favoritos</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnFavorito = document.getElementById('btn-favorito');
+    const toast = new bootstrap.Toast(document.getElementById('toastFavorito'));
+    const toastMessage = document.getElementById('toastMessage');
+    
+    if (btnFavorito) {
+        btnFavorito.addEventListener('click', function() {
+            const mascotaId = this.dataset.mascotaId;
+            const esFavorito = this.dataset.esFavorito === 'true';
+            const url = esFavorito ? 
+                `/mascota/${mascotaId}/quitar-favorito/` : 
+                `/mascota/${mascotaId}/agregar-favorito/`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar el botón
+                    this.dataset.esFavorito = data.is_favorite.toString();
+                    if (data.is_favorite) {
+                        this.innerHTML = '<i class="fas fa-heart"></i> Quitar de Favoritos';
+                        this.classList.remove('btn-secondary-custom');
+                        this.classList.add('btn-danger');
+                    } else {
+                        this.innerHTML = '<i class="far fa-heart"></i> Agregar a Favoritos';
+                        this.classList.remove('btn-danger');
+                        this.classList.add('btn-secondary-custom');
+                    }
+                    
+                    // Mostrar mensaje
+                    toastMessage.textContent = data.message;
+                    toast.show();
+                } else {
+                    toastMessage.textContent = data.message;
+                    toast.show();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                toastMessage.textContent = 'Error al procesar la solicitud';
+                toast.show();
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

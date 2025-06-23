@@ -1,0 +1,86 @@
+{% extends "adopcion/base.html" %}
+{% load static %}
+
+{% block title %}Apoya Nuestra Causa - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 donation-card">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-3">Apoya Nuestra Causa</h2>
+                    <p class="card-text text-center text-muted mb-5">Tu generosidad nos permite seguir rescatando, cuidando y encontrando hogares para nuestros peludos. Elige cómo quieres ayudar.</p>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class.row g-3 mb-4">
+                            <div class="col-md-6">{{ form.nombre_donante.label_tag }} {{ form.nombre_donante }}</div>
+                            <div class="col-md-6">{{ form.apellido_donante.label_tag }} {{ form.apellido_donante }}</div>
+                            <div class="col-md-6">{{ form.email_donante.label_tag }} {{ form.email_donante }}</div>
+                            <div class="col-md-6">{{ form.telefono_donante.label_tag }} {{ form.telefono_donante }}</div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-4">
+                            <label for="id_tipo_donacion" class="form-label fw-bold">Quiero hacer una donación:</label>
+                            {{ form.tipo_donacion }}
+                        </div>
+
+                        <!-- Campos para Donación Monetaria -->
+                        <div id="monetaria-fields" class="donation-fields">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.monto.id_for_label }}">{{ form.monto.label }}</label>
+                                    {{ form.monto }}
+                                    <div class="field-help">Monto mínimo: $1, máximo: $1,000,000,000</div>
+                                    {% if form.monto.errors %}
+                                        <div class="error-message">{{ form.monto.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">{{ form.medio_pago.label_tag }} {{ form.medio_pago }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Campos para Donación de Insumos -->
+                        <div id="insumos-fields" class="donation-fields">
+                             <div class="row g-3">
+                                <div class="col-md-6">{{ form.categoria_insumo.label_tag }} {{ form.categoria_insumo }}</div>
+                                <div class="col-12">{{ form.descripcion_insumo.label_tag }} {{ form.descripcion_insumo }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-primary-custom btn-lg">Realizar Donación</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoDonacionSelect = document.getElementById('id_tipo_donacion');
+    const monetariaFields = document.getElementById('monetaria-fields');
+    const insumosFields = document.getElementById('insumos-fields');
+
+    function toggleFields() {
+        const selectedType = tipoDonacionSelect.value;
+        monetariaFields.style.display = selectedType === 'monetaria' ? 'block' : 'none';
+        insumosFields.style.display = selectedType === 'insumos' ? 'block' : 'none';
+    }
+
+    // Ocultar al cargar la página
+    toggleFields();
+
+    // Cambiar visibilidad al seleccionar
+    tipoDonacionSelect.addEventListener('change', toggleFields);
+});
+</script>
+{% endblock %} 

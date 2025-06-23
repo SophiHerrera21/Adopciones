@@ -1,0 +1,39 @@
+{% extends 'adopcion/base.html' %}
+
+{% block title %}Probar Correo - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-envelope me-2"></i>Probar Correo de Bienvenida
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-4">
+                        Esta función permite probar el envío de correos de bienvenida. 
+                        Se enviará un correo de prueba a tu dirección de email registrada.
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <strong>Email de destino:</strong> {{ user.email }}
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Correo de Prueba
+                        </button>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary ms-2">
+                            <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

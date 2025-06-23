@@ -1,0 +1,12 @@
+Hola, {{ solicitud.usuario.nombre }}.
+
+Queremos informarte que tu solicitud para adoptar a {{ solicitud.mascota.nombre }} sigue en proceso de revisión.
+
+Sabemos que la espera puede ser difícil, pero nuestro equipo está trabajando para darte una respuesta lo antes posible.
+
+Si tienes alguna pregunta, no dudes en responder a este correo o contactarnos a través de nuestros canales oficiales.
+
+¡Gracias por tu paciencia y por querer darle un hogar a una mascota rescatada!
+
+---
+© {% now "Y" %} Luna & Lía: Rescatando Huellas. 

@@ -1,0 +1,91 @@
+{% extends 'adopcion/base.html' %}
+
+{% block title %}Lista de Solicitudes - Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    .solicitud-pet-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        object-position: center;
+        border-radius: 8px;
+        border: 2px solid var(--color-secondary);
+    }
+    
+    .image-placeholder {
+        background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-primary);
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Todas las Solicitudes de Adopción</h1>
+    <p>Aquí puedes ver el historial completo de solicitudes de adopción.</p>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Mascota</th>
+                        <th>Solicitante</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in solicitudes %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if solicitud.mascota.imagen_principal %}
+                                    <img src="{{ solicitud.mascota.imagen_principal.url }}" 
+                                         class="solicitud-pet-image me-2" 
+                                         alt="{{ solicitud.mascota.nombre }}">
+                                {% else %}
+                                    <div class="solicitud-pet-image image-placeholder d-flex align-items-center justify-content-center me-2">
+                                        <i class="fas fa-paw"></i>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ solicitud.mascota.nombre }}</strong><br>
+                                    <small class="text-muted">{{ solicitud.mascota.get_tipo_display }} • {{ solicitud.mascota.get_sexo_display }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}</td>
+                        <td>{{ solicitud.fecha_solicitud|date:"d M, Y" }}</td>
+                        <td>
+                            {% if solicitud.estado_solicitud == 'aprobada' %}
+                                <span class="badge bg-success">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% elif solicitud.estado_solicitud == 'rechazada' %}
+                                <span class="badge bg-danger">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% elif solicitud.estado_solicitud == 'en_revision' %}
+                                <span class="badge bg-info">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% else %}
+                                <span class="badge bg-warning">{{ solicitud.get_estado_solicitud_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalle_solicitud' solicitud.id %}" class="btn btn-sm btn-outline-primary">Revisar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Aún no se han recibido solicitudes.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

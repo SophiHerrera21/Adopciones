@@ -1,0 +1,65 @@
+{% extends 'adopcion/base.html' %}
+
+{% block title %}Enviar Correo Masivo - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-envelope-open-text me-2"></i>Envío de Correo Masivo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Información:</strong> Esta función permite enviar correos masivos a todos los usuarios registrados en el sistema.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="tipo_destinatarios" class="form-label">
+                                <i class="fas fa-users me-1"></i>Destinatarios
+                            </label>
+                            <select class="form-select" id="tipo_destinatarios" name="tipo_destinatarios" required>
+                                <option value="todos">Todos los usuarios</option>
+                                <option value="usuarios">Solo usuarios</option>
+                                <option value="administradores">Solo administradores</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="asunto" class="form-label">
+                                <i class="fas fa-tag me-1"></i>Asunto
+                            </label>
+                            <input type="text" class="form-control" id="asunto" name="asunto" 
+                                   placeholder="Asunto del correo" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="mensaje" class="form-label">
+                                <i class="fas fa-comment me-1"></i>Mensaje
+                            </label>
+                            <textarea class="form-control" id="mensaje" name="mensaje" rows="8" 
+                                      placeholder="Escribe tu mensaje aquí..." required></textarea>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar Correo Masivo
+                            </button>
+                            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Panel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,35 @@
+Luna & Lía: Rescatando Huellas
+Solicitud de Adopción Recibida
+
+¡Hola {{ solicitud.usuario.nombre }}!
+
+Hemos recibido tu solicitud de adopción para {{ solicitud.mascota.nombre }} y queremos agradecerte por tu interés en darle un hogar amoroso.
+
+INFORMACIÓN DE LA MASCOTA:
+- Nombre: {{ solicitud.mascota.nombre }}
+- Tipo: {{ solicitud.mascota.get_tipo_display }}
+- Raza: {{ solicitud.mascota.raza|default:"Mestizo" }}
+- Edad: {{ solicitud.mascota.edad_aproximada }} meses
+
+¿QUÉ SIGUE?
+Nuestro equipo revisará tu solicitud cuidadosamente y nos pondremos en contacto contigo en los próximos días para:
+- Confirmar los detalles de tu solicitud
+- Programar una entrevista si es necesario
+- Coordinar la visita al hogar
+- Informarte sobre el estado de tu solicitud
+
+Número de solicitud: #{{ solicitud.id }}
+Fecha de solicitud: {{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}
+
+Mientras tanto, puedes revisar el estado de tu solicitud en tu perfil de usuario.
+
+Si tienes alguna pregunta, no dudes en contactarnos respondiendo a este correo.
+
+Gracias por tu paciencia y por considerar la adopción responsable.
+
+Con cariño,
+El equipo de Luna & Lía
+
+---
+© 2024 Luna & Lía: Rescatando Huellas
+Este es un correo automático, por favor no respondas a esta dirección. 

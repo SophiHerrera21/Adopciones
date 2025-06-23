@@ -1,0 +1,17 @@
+Hola, {{ solicitud.usuario.nombre }}.
+
+Te escribimos para informarte sobre el estado de tu solicitud para adoptar a {{ solicitud.mascota.nombre }}.
+
+Estado actual: {{ solicitud.get_estado_solicitud_display }}
+
+{% if solicitud.estado_solicitud == 'aprobada' %}
+¡Felicidades! Tu solicitud ha sido aprobada. 
+En breve, uno de nuestros voluntarios se pondrá en contacto contigo para coordinar los últimos detalles de la entrega.
+{% else %}
+Lamentamos informarte que, tras una cuidadosa revisión, tu solicitud no ha sido aprobada en esta ocasión.
+Te animamos a no desanimarte y a seguir buscando a tu compañero ideal.
+{% endif %}
+
+---
+Para cualquier consulta, no dudes en contactarnos.
+© {% now "Y" %} Luna & Lía: Rescatando Huellas. 

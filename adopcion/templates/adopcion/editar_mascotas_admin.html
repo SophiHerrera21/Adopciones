@@ -1,0 +1,51 @@
+{% extends 'adopcion/base.html' %}
+{% block title %}Edición Masiva de Mascotas - Admin{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4"><i class="fas fa-edit me-2"></i>Edición Masiva de Mascotas</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Edad (meses)</th>
+                        <th>Peso (kg)</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mascota in mascotas %}
+                    <tr>
+                        <td>{{ mascota.id }}</td>
+                        <td><input type="text" name="nombre_{{ mascota.id }}" value="{{ mascota.nombre }}" class="form-control" required></td>
+                        <td><input type="number" name="edad_{{ mascota.id }}" value="{{ mascota.edad_aproximada }}" min="1" max="204" class="form-control" required></td>
+                        <td><input type="number" name="peso_{{ mascota.id }}" value="{{ mascota.peso }}" min="0.01" max="200" step="0.01" class="form-control" required></td>
+                        <td>
+                            <select name="tipo_{{ mascota.id }}" class="form-select">
+                                <option value="perro" {% if mascota.tipo == 'perro' %}selected{% endif %}>Perro</option>
+                                <option value="gato" {% if mascota.tipo == 'gato' %}selected{% endif %}>Gato</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="estado_{{ mascota.id }}" class="form-select">
+                                <option value="disponible" {% if mascota.estado_adopcion == 'disponible' %}selected{% endif %}>Disponible</option>
+                                <option value="en_proceso" {% if mascota.estado_adopcion == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                                <option value="adoptado" {% if mascota.estado_adopcion == 'adoptado' %}selected{% endif %}>Adoptado</option>
+                                <option value="no_disponible" {% if mascota.estado_adopcion == 'no_disponible' %}selected{% endif %}>No Disponible</option>
+                            </select>
+                        </td>
+                        <td><button type="submit" class="btn btn-primary btn-sm">Guardar</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+</div>
+{% endblock %} 
