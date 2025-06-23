@@ -28,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+import pymysql
+pymysql.install_as_MySQLdb()
+
 
 # Application definition
 
@@ -79,11 +82,11 @@ WSGI_APPLICATION = 'luna_lia_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'adopciones_juntos',
+        'NAME': 'railway',
         'USER': 'root',      # Usuario de MySQL
-        'PASSWORD': '',      # Sin contraseña
-        'HOST': 'localhost',                # O la IP de tu servidor de base de datos
-        'PORT': '3306',                     # Puerto por defecto de MySQL
+        'PASSWORD': 'GevgSJdMGSPBqVqwdIGTqiKwDnOynkEy',      # Sin contraseña
+        'HOST': 'maglev.proxy.rlwy.net',                # O la IP de tu servidor de base de datos
+        'PORT': '31175',                     # Puerto por defecto de MySQL
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
