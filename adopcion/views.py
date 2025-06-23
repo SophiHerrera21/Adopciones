@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode
+from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode, HistorialMascota
 from .forms import SolicitudAdopcionForm, CustomUserCreationForm, UserUpdateForm, DonacionForm, MascotaAdminForm, ReporteMensualForm, PasswordResetEmailForm, PasswordResetCodeForm, PasswordResetNewPasswordForm
 from .decorators import admin_required
 from django.db.models import Sum, Count, Q
