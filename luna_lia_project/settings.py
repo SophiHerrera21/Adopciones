@@ -26,11 +26,13 @@ SECRET_KEY = 'django-insecure-your-secret-key-here'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['adopciones-x39t.onrender.com','127.0.0.1']
 
 import pymysql
 pymysql.install_as_MySQLdb()
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://adopciones-x39t.onrender.com",
+]
 
 # Application definition
 
