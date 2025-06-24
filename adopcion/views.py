@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode, HistorialMascota, SeguimientoMascota
+from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode, HistorialMascota, SeguimientoMascota, CitaPreAdopcion
 from .forms import SolicitudAdopcionForm, CustomUserCreationForm, UserUpdateForm, DonacionForm, MascotaAdminForm, ReporteMensualForm, PasswordResetEmailForm, PasswordResetCodeForm, PasswordResetNewPasswordForm
 from .decorators import admin_required
 from django.db.models import Sum, Count, Q
@@ -308,32 +308,44 @@ def actualizar_estado_solicitud(request, solicitud_id, nuevo_estado):
             solicitud.fecha_respuesta = timezone.now()
             solicitud.id_admin_revisor = request.user
             solicitud.save()
-            # Si se aprueba, actualizar la mascota
+            
+            # Si se aprueba, crear cita de pre-adopción
             if nuevo_estado == 'aprobada':
-                mascota = solicitud.mascota
-                mascota.estado_adopcion = 'adoptado'
-                mascota.fecha_adopcion = timezone.now().date()
-                mascota.save()
-                # Crear 3 seguimientos automáticos (cada 2 meses)
-                for i in range(1, 4):
-                    SeguimientoMascota.objects.create(
-                        mascota=mascota,
-                        adoptante=solicitud.usuario,
-                        proxima_cita=timezone.now().date() + timedelta(days=60*i),
-                        numero_cita=i
-                    )
-                # Rechazar otras solicitudes para la misma mascota
-                SolicitudAdopcion.objects.filter(mascota=mascota).exclude(id=solicitud_id).update(
-                    estado_solicitud='rechazada',
-                    fecha_respuesta=timezone.now(),
-                    id_admin_revisor=request.user
+                # Programar cita para 3 días después a las 2:00 PM
+                fecha_cita = timezone.now() + timedelta(days=3)
+                fecha_cita = fecha_cita.replace(hour=14, minute=0, second=0, microsecond=0)
+                
+                # Crear la cita de pre-adopción
+                cita = CitaPreAdopcion.objects.create(
+                    solicitud=solicitud,
+                    fecha_cita=fecha_cita,
+                    duracion_minutos=30,
+                    lugar="Fundación Luna & Lía"
                 )
-            # Enviar email de notificación al usuario
+                
+                # Enviar email con la cita
+                try:
+                    asunto = f"¡Cita programada para conocer a {solicitud.mascota.nombre}!"
+                    mensaje_html = render_to_string('emails/cita_pre_adopcion.html', {'cita': cita})
+                    mensaje_txt = render_to_string('emails/cita_pre_adopcion.txt', {'cita': cita})
+                    
+                    send_mail(
+                        asunto,
+                        mensaje_txt,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.usuario.email],
+                        html_message=mensaje_html
+                    )
+                    
+                    messages.success(request, f"Solicitud aprobada. Se ha programado una cita para {solicitud.usuario.username} y se envió el email de confirmación.")
+                except Exception as e:
+                    messages.warning(request, f"Solicitud aprobada y cita creada, pero hubo un error enviando el email: {e}")
+            
+            # Enviar email de notificación del estado
             try:
                 enviar_correo_estado_solicitud(solicitud)
-                messages.success(request, f"La solicitud para {solicitud.mascota.nombre} ha sido {nuevo_estado} y el usuario ha sido notificado por email.")
             except Exception as e:
-                messages.warning(request, f"La solicitud ha sido {nuevo_estado} pero hubo un error enviando el email: {e}")
+                messages.warning(request, f"Hubo un error enviando el email de notificación: {e}")
         else:
             messages.error(request, "Estado no válido.")
         return redirect('detalle_solicitud', solicitud_id=solicitud.id)

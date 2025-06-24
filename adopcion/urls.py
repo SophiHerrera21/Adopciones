@@ -66,4 +66,6 @@ urlpatterns = [
     path('admin/seguimiento/<int:seguimiento_id>/aprobar/', views.aprobar_seguimiento, name='aprobar_seguimiento'),
     path('admin/seguimiento/<int:seguimiento_id>/denegar/', views.denegar_seguimiento, name='denegar_seguimiento'),
     path('admin/seguimiento/<int:seguimiento_id>/cambiar-fecha/', views.cambiar_fecha_seguimiento, name='cambiar_fecha_seguimiento'),
+    path('admin/citas-pre-adopcion/', views.admin_citas_pre_adopcion, name='admin_citas_pre_adopcion'),
+    path('admin/cita/<int:cita_id>/estado/<str:nuevo_estado>/', views.cambiar_estado_cita, name='cambiar_estado_cita'),
 ] 

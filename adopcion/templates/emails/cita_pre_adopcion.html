@@ -1,0 +1,33 @@
+<html>
+  <body style="font-family: Arial, sans-serif; background: #f8f5f0; color: #4e342e;">
+    <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #e0cfc2; padding: 32px;">
+      <h2 style="color: #795548;">¡Hola {{ cita.usuario.get_full_name|default:cita.usuario.username }}!</h2>
+      <p>¡Excelentes noticias! Tu solicitud de adopción para <strong>{{ cita.mascota.nombre }}</strong> ha sido <strong>aprobada</strong> y hemos programado una cita para que puedas conocer a tu futuro compañero.</p>
+      
+      <div style="background: #f9f9f9; border-left: 4px solid #8c6239; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+        <h4 style="color: #8c6239; margin-top: 0;"><i class="fas fa-calendar-check me-2"></i>Detalles de tu cita:</h4>
+        <p style="margin: 8px 0;"><strong>Fecha y hora:</strong> {{ cita.fecha_cita|date:"d/m/Y" }} a las {{ cita.fecha_cita|time:"H:i" }}</p>
+        <p style="margin: 8px 0;"><strong>Duración:</strong> {{ cita.duracion_minutos }} minutos</p>
+        <p style="margin: 8px 0;"><strong>Lugar:</strong> {{ cita.lugar }}</p>
+        <p style="margin: 8px 0;"><strong>Mascota:</strong> {{ cita.mascota.nombre }} ({{ cita.mascota.get_tipo_display }})</p>
+      </div>
+      
+      <h4 style="color: #795548;">¿Qué esperar en tu cita?</h4>
+      <ul style="color: #4e342e;">
+        <li>Conocerás personalmente a {{ cita.mascota.nombre }}</li>
+        <li>Podrás interactuar y jugar con él/ella</li>
+        <li>Recibirás información detallada sobre su cuidado</li>
+        <li>Resolveremos todas tus dudas</li>
+        <li>Si todo va bien, podrás llevártelo a casa</li>
+      </ul>
+      
+      <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 16px; border-radius: 8px; margin: 24px 0;">
+        <h5 style="color: #856404; margin-top: 0;"><i class="fas fa-info-circle me-2"></i>Importante:</h5>
+        <p style="margin: 0; color: #856404;">Por favor llega 10 minutos antes de tu cita. Si necesitas reprogramar, contacta con nosotros con al menos 24 horas de anticipación.</p>
+      </div>
+      
+      <p style="margin-top: 32px; color: #a1887f;">¡Estamos muy emocionados de que {{ cita.mascota.nombre }} encuentre su hogar perfecto!<br>El equipo de Luna & Lía</p>
+      <img src="https://i.imgur.com/8QfQ2Qp.png" alt="Luna & Lía" style="width: 120px; margin-top: 24px;">
+    </div>
+  </body>
+</html> 

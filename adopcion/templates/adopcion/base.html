@@ -47,6 +47,8 @@
                             <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="fas fa-chart-line"></i> Panel</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'agregar_mascota' %}"><i class="fas fa-plus"></i> Añadir Mascota</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'lista_solicitudes' %}"><i class="fas fa-file-alt"></i> Solicitudes</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_citas_pre_adopcion' %}"><i class="fas fa-calendar-alt"></i> Citas</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_seguimiento_mascotas' %}"><i class="fas fa-calendar-check"></i> Seguimientos</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'pagina_reportes' %}"><i class="fas fa-file-pdf"></i> Reportes</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'inicio' %}"><i class="fas fa-globe"></i> Ver Sitio Público</a></li>
                             <li class="nav-item dropdown">
@@ -124,11 +126,41 @@
     <!-- Footer -->
     <footer class="footer-container text-center py-4 mt-5">
         <div class="container">
-            <p>&copy; {% now "Y" %} Luna & Lía: Rescatando Huellas. Todos los derechos reservados.</p>
-            <p>
-                <a href="#">Política de Privacidad</a> | 
-                <a href="#">Términos de Servicio</a>
-            </p>
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="text-white mb-3"><i class="fas fa-heart me-2"></i>Luna & Lía</h5>
+                    <p class="text-light">Rescatando huellas, transformando vidas</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-white mb-3">Contacto</h6>
+                    <p class="text-light mb-1">
+                        <i class="fas fa-envelope me-2"></i>
+                        <a href="mailto:contacto@lunaylia.com" class="text-light text-decoration-none">contacto@lunaylia.com</a>
+                    </p>
+                    <p class="text-light mb-1">
+                        <i class="fas fa-phone me-2"></i>
+                        <a href="tel:+573001234567" class="text-light text-decoration-none">+57 300 123 4567</a>
+                    </p>
+                    <p class="text-light">
+                        <i class="fas fa-clock me-2"></i>
+                        Lun - Sáb: 9:00 AM - 6:00 PM
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-white mb-3">Enlaces</h6>
+                    <p class="mb-1">
+                        <a href="#" class="text-light text-decoration-none">Política de Privacidad</a>
+                    </p>
+                    <p class="mb-1">
+                        <a href="#" class="text-light text-decoration-none">Términos de Servicio</a>
+                    </p>
+                    <p class="mb-0">
+                        <a href="{% url 'donar' %}" class="text-light text-decoration-none">Hacer una Donación</a>
+                    </p>
+                </div>
+            </div>
+            <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+            <p class="text-light mb-0">&copy; {% now "Y" %} Luna & Lía: Rescatando Huellas. Todos los derechos reservados.</p>
         </div>
     </footer>
 

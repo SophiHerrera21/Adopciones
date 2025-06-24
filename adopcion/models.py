@@ -355,6 +355,40 @@ class SeguimientoMascota(models.Model):
     numero_cita = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(3)])  # 1, 2 o 3
     completada = models.BooleanField(default=False)
     observaciones = models.TextField(blank=True, null=True)
+    fecha_completada = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('mascota', 'adoptante', 'numero_cita')
 
     def __str__(self):
-        return f"Seguimiento {self.mascota.nombre} - Cita {self.numero_cita}"
+        return f"Cita {self.numero_cita} - {self.mascota.nombre} con {self.adoptante.username}"
+
+class CitaPreAdopcion(models.Model):
+    ESTADO_CHOICES = (
+        ('programada', 'Programada'),
+        ('confirmada', 'Confirmada'),
+        ('completada', 'Completada'),
+        ('cancelada', 'Cancelada'),
+        ('reprogramada', 'Reprogramada'),
+    )
+    
+    solicitud = models.OneToOneField('SolicitudAdopcion', on_delete=models.CASCADE, related_name='cita_pre_adopcion')
+    fecha_cita = models.DateTimeField()
+    duracion_minutos = models.PositiveIntegerField(default=30, help_text="Duración en minutos")
+    lugar = models.CharField(max_length=200, default="Fundación Luna & Lía")
+    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='programada')
+    observaciones_admin = models.TextField(blank=True, help_text="Observaciones internas del administrador")
+    observaciones_usuario = models.TextField(blank=True, help_text="Observaciones del usuario")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Cita para {self.solicitud.mascota.nombre} - {self.solicitud.usuario.username} - {self.fecha_cita.strftime('%d/%m/%Y %H:%M')}"
+    
+    @property
+    def mascota(self):
+        return self.solicitud.mascota
+    
+    @property
+    def usuario(self):
+        return self.solicitud.usuario

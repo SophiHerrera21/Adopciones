@@ -1,0 +1,23 @@
+¡Hola {{ cita.usuario.get_full_name|default:cita.usuario.username }}!
+
+¡Excelentes noticias! Tu solicitud de adopción para {{ cita.mascota.nombre }} ha sido aprobada y hemos programado una cita para que puedas conocer a tu futuro compañero.
+
+DETALLES DE TU CITA:
+- Fecha y hora: {{ cita.fecha_cita|date:"d/m/Y" }} a las {{ cita.fecha_cita|time:"H:i" }}
+- Duración: {{ cita.duracion_minutos }} minutos
+- Lugar: {{ cita.lugar }}
+- Mascota: {{ cita.mascota.nombre }} ({{ cita.mascota.get_tipo_display }})
+
+¿QUÉ ESPERAR EN TU CITA?
+- Conocerás personalmente a {{ cita.mascota.nombre }}
+- Podrás interactuar y jugar con él/ella
+- Recibirás información detallada sobre su cuidado
+- Resolveremos todas tus dudas
+- Si todo va bien, podrás llevártelo a casa
+
+IMPORTANTE:
+Por favor llega 10 minutos antes de tu cita. Si necesitas reprogramar, contacta con nosotros con al menos 24 horas de anticipación.
+
+¡Estamos muy emocionados de que {{ cita.mascota.nombre }} encuentre su hogar perfecto!
+
+El equipo de Luna & Lía 
