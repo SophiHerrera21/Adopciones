@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Usuario, Mascota, FotoMascota, SolicitudAdopcion, 
-    SeguimientoAdopcion, Favorito, Donacion, Mensaje, ConfiguracionSitio
+    SeguimientoAdopcion, Favorito, Donacion, Mensaje, ConfiguracionSitio, SeguimientoMascota
 )
 
 # Para mejorar la visualización de las fotos en el admin de Mascota

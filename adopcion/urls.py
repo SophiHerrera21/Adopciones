@@ -2,6 +2,8 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
 from .decorators import admin_email_required
+from django.shortcuts import redirect
+from django.views.generic import RedirectView
 
 # Este es el router de la app, es llamado por el router del proyecto
 urlpatterns = [
@@ -62,7 +64,7 @@ urlpatterns = [
     path('recuperar-password/', views.recuperar_password_email, name='recuperar_password_email'),
     path('recuperar-password/codigo/', views.recuperar_password_codigo, name='recuperar_password_codigo'),
     path('recuperar-password/nueva/', views.recuperar_password_nueva, name='recuperar_password_nueva'),
-    path('admin/seguimiento/', views.admin_seguimiento_mascotas, name='admin_seguimiento_mascotas'),
+    path('admin/seguimiento/', RedirectView.as_view(url='/admin/seguimiento-mascotas/', permanent=True)),
     path('admin/seguimiento/<int:seguimiento_id>/aprobar/', views.aprobar_seguimiento, name='aprobar_seguimiento'),
     path('admin/seguimiento/<int:seguimiento_id>/denegar/', views.denegar_seguimiento, name='denegar_seguimiento'),
     path('admin/seguimiento/<int:seguimiento_id>/cambiar-fecha/', views.cambiar_fecha_seguimiento, name='cambiar_fecha_seguimiento'),
