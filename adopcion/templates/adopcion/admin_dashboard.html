@@ -137,6 +137,16 @@
     
     <!-- Fila para Actividad Reciente -->
     <div class="row mt-4">
+        <div class="col-lg-4">
+            <div class="list-group mb-4">
+                <a href="{% url 'admin_editar_mascotas' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-paw me-2"></i>Edición Masiva de Mascotas
+                </a>
+                <a href="{% url 'admin_seguimiento_mascotas' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-calendar-check me-2"></i>Seguimiento de Mascotas
+                </a>
+            </div>
+        </div>
         <div class="col-lg-8">
             <h4><i class="fas fa-clock me-2"></i>Últimas Mascotas Registradas</h4>
             <div class="table-responsive">

@@ -32,6 +32,7 @@ urlpatterns = [
     path('panel/probar-correo/', admin_email_required(views.probar_correo_bienvenida), name='probar_correo'),
     path('panel/correo-masivo/', admin_email_required(views.enviar_correo_masivo_view), name='enviar_correo_masivo'),
     path('panel/mascotas/editar-masivo/', admin_email_required(views.admin_editar_mascotas), name='admin_editar_mascotas'),
+    path('panel/seguimiento-mascotas/', admin_email_required(views.admin_seguimiento_mascotas), name='admin_seguimiento_mascotas'),
 
     # Rutas de Adopción
     path('mascota/<int:mascota_id>/solicitar/', views.solicitar_adopcion, name='solicitar_adopcion'),
@@ -61,4 +62,8 @@ urlpatterns = [
     path('recuperar-password/', views.recuperar_password_email, name='recuperar_password_email'),
     path('recuperar-password/codigo/', views.recuperar_password_codigo, name='recuperar_password_codigo'),
     path('recuperar-password/nueva/', views.recuperar_password_nueva, name='recuperar_password_nueva'),
+    path('admin/seguimiento/', views.admin_seguimiento_mascotas, name='admin_seguimiento_mascotas'),
+    path('admin/seguimiento/<int:seguimiento_id>/aprobar/', views.aprobar_seguimiento, name='aprobar_seguimiento'),
+    path('admin/seguimiento/<int:seguimiento_id>/denegar/', views.denegar_seguimiento, name='denegar_seguimiento'),
+    path('admin/seguimiento/<int:seguimiento_id>/cambiar-fecha/', views.cambiar_fecha_seguimiento, name='cambiar_fecha_seguimiento'),
 ] 

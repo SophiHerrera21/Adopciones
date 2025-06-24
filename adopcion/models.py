@@ -335,3 +335,26 @@ class PasswordResetCode(models.Model):
 
     def __str__(self):
         return f"Código para {self.usuario.email} ({self.codigo})"
+
+class HistorialMascota(models.Model):
+    mascota = models.ForeignKey('Mascota', on_delete=models.CASCADE)
+    estado_anterior = models.CharField(max_length=30)
+    estado_nuevo = models.CharField(max_length=30)
+    fecha_cambio = models.DateTimeField(auto_now_add=True)
+    observacion = models.TextField(blank=True, null=True)
+    usuario = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.mascota.nombre}: {self.estado_anterior} → {self.estado_nuevo} ({self.fecha_cambio:%Y-%m-%d %H:%M})"
+
+class SeguimientoMascota(models.Model):
+    mascota = models.ForeignKey('Mascota', on_delete=models.CASCADE)
+    adoptante = models.ForeignKey('Usuario', on_delete=models.CASCADE)
+    fecha_inicio = models.DateField(auto_now_add=True)
+    proxima_cita = models.DateField()
+    numero_cita = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(3)])  # 1, 2 o 3
+    completada = models.BooleanField(default=False)
+    observaciones = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Seguimiento {self.mascota.nombre} - Cita {self.numero_cita}"

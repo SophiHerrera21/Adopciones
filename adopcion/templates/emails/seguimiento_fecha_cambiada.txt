@@ -1,0 +1,11 @@
+Hola {{ adoptante.get_full_name|default:adoptante.username }}!
+
+Te informamos que la fecha de la próxima cita de seguimiento para {{ mascota.nombre }} ha sido cambiada por el equipo de Luna & Lía.
+
+Nueva fecha de la cita: {{ nueva_fecha|date:'d/m/Y' }}
+
+Si tienes alguna duda o necesitas reprogramar, por favor responde a este correo o comunícate con nosotros.
+
+Gracias por tu compromiso y cariño con {{ mascota.nombre }}.
+
+El equipo de Luna & Lía 

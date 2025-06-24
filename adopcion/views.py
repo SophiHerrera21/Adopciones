@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode, HistorialMascota
+from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode, HistorialMascota, SeguimientoMascota
 from .forms import SolicitudAdopcionForm, CustomUserCreationForm, UserUpdateForm, DonacionForm, MascotaAdminForm, ReporteMensualForm, PasswordResetEmailForm, PasswordResetCodeForm, PasswordResetNewPasswordForm
 from .decorators import admin_required
 from django.db.models import Sum, Count, Q
@@ -303,26 +303,31 @@ def enviar_correo_estado_solicitud(solicitud):
 def actualizar_estado_solicitud(request, solicitud_id, nuevo_estado):
     if request.method == 'POST':
         solicitud = get_object_or_404(SolicitudAdopcion, id=solicitud_id)
-        
         if nuevo_estado in ['aprobada', 'rechazada']:
             solicitud.estado_solicitud = nuevo_estado
             solicitud.fecha_respuesta = timezone.now()
             solicitud.id_admin_revisor = request.user
             solicitud.save()
-
             # Si se aprueba, actualizar la mascota
             if nuevo_estado == 'aprobada':
                 mascota = solicitud.mascota
                 mascota.estado_adopcion = 'adoptado'
                 mascota.fecha_adopcion = timezone.now().date()
                 mascota.save()
+                # Crear 3 seguimientos automáticos (cada 2 meses)
+                for i in range(1, 4):
+                    SeguimientoMascota.objects.create(
+                        mascota=mascota,
+                        adoptante=solicitud.usuario,
+                        proxima_cita=timezone.now().date() + timedelta(days=60*i),
+                        numero_cita=i
+                    )
                 # Rechazar otras solicitudes para la misma mascota
                 SolicitudAdopcion.objects.filter(mascota=mascota).exclude(id=solicitud_id).update(
                     estado_solicitud='rechazada',
                     fecha_respuesta=timezone.now(),
                     id_admin_revisor=request.user
                 )
-
             # Enviar email de notificación al usuario
             try:
                 enviar_correo_estado_solicitud(solicitud)
@@ -331,7 +336,6 @@ def actualizar_estado_solicitud(request, solicitud_id, nuevo_estado):
                 messages.warning(request, f"La solicitud ha sido {nuevo_estado} pero hubo un error enviando el email: {e}")
         else:
             messages.error(request, "Estado no válido.")
-        
         return redirect('detalle_solicitud', solicitud_id=solicitud.id)
     return redirect('inicio')
 
@@ -558,10 +562,14 @@ def perfil_view(request):
     # Obtenemos las donaciones del usuario
     donaciones = Donacion.objects.filter(usuario=request.user).order_by('-fecha_donacion')
 
+    # Obtenemos los seguimientos del usuario
+    seguimientos = SeguimientoMascota.objects.filter(adoptante=request.user).order_by('proxima_cita')
+
     context = {
         'form': form,
         'solicitudes': solicitudes,
-        'donaciones': donaciones
+        'donaciones': donaciones,
+        'seguimientos': seguimientos
     }
     return render(request, 'adopcion/perfil.html', context)
 
@@ -1081,12 +1089,20 @@ def editar_mascota(request, mascota_id):
     if request.method == 'POST':
         form = MascotaAdminForm(request.POST, request.FILES, instance=mascota)
         if form.is_valid():
-            form.save()
+            estado_anterior = mascota.estado_adopcion
+            mascota = form.save()
+            nuevo_estado = mascota.estado_adopcion
+            if estado_anterior != nuevo_estado:
+                HistorialMascota.objects.create(
+                    mascota=mascota,
+                    estado_anterior=estado_anterior,
+                    estado_nuevo=nuevo_estado,
+                    usuario=request.user
+                )
             messages.success(request, f'Los datos de {mascota.nombre} han sido actualizados.')
             return redirect('admin_dashboard')
     else:
         form = MascotaAdminForm(instance=mascota)
-    
     return render(request, 'adopcion/agregar_mascota.html', {
         'form': form,
         'titulo': f'Editar a {mascota.nombre}'
@@ -1174,18 +1190,30 @@ def lista_mascotas(request):
 def admin_editar_mascotas(request):
     from .models import Mascota
     if request.method == "POST":
-        # Procesar edición masiva
         for key, value in request.POST.items():
             if key.startswith("nombre_"):
                 mascota_id = key.split("_")[1]
                 try:
                     mascota = Mascota.objects.get(id=mascota_id)
+                    estado_anterior = mascota.estado_adopcion
                     mascota.nombre = value
-                    mascota.edad_aproximada = request.POST.get(f"edad_{mascota_id}")
+                    edad = int(request.POST.get(f"edad_{mascota_id}"))
+                    peso = float(request.POST.get(f"peso_{mascota_id}"))
+                    if edad < 0 or peso < 0:
+                        continue  # No permitir valores negativos
+                    mascota.edad_aproximada = edad
                     mascota.estado_adopcion = request.POST.get(f"estado_{mascota_id}")
-                    mascota.peso = request.POST.get(f"peso_{mascota_id}")
+                    mascota.peso = peso
                     mascota.tipo = request.POST.get(f"tipo_{mascota_id}")
                     mascota.save()
+                    nuevo_estado = mascota.estado_adopcion
+                    if estado_anterior != nuevo_estado:
+                        HistorialMascota.objects.create(
+                            mascota=mascota,
+                            estado_anterior=estado_anterior,
+                            estado_nuevo=nuevo_estado,
+                            usuario=request.user
+                        )
                 except Mascota.DoesNotExist:
                     continue
         return redirect('admin_editar_mascotas')
@@ -1271,3 +1299,108 @@ def recuperar_password_nueva(request):
     else:
         form = PasswordResetNewPasswordForm()
     return render(request, 'registration/otp_password_reset_new.html', {'form': form})
+
+@admin_required
+def admin_seguimiento_mascotas(request):
+    seguimientos = SeguimientoMascota.objects.select_related('mascota', 'adoptante').order_by('proxima_cita', 'completada')
+    historial = HistorialMascota.objects.all().order_by('-fecha_cambio')[:20]  # Últimos 20 cambios
+    context = {
+        'seguimientos': seguimientos,
+        'historial': historial
+    }
+    return render(request, 'adopcion/seguimiento_mascotas_admin.html', context)
+
+@admin_required
+def aprobar_seguimiento(request, seguimiento_id):
+    if request.method == 'POST':
+        seguimiento = get_object_or_404(SeguimientoMascota, id=seguimiento_id)
+        seguimiento.completada = True
+        seguimiento.fecha_completada = timezone.now()
+        seguimiento.observaciones = "Cita aprobada - Seguimiento exitoso"
+        seguimiento.save()
+        
+        # Si es la cita 3, no crear más citas
+        if seguimiento.numero_cita < 3:
+            # Crear la siguiente cita
+            SeguimientoMascota.objects.create(
+                mascota=seguimiento.mascota,
+                adoptante=seguimiento.adoptante,
+                proxima_cita=timezone.now().date() + timedelta(days=60),
+                numero_cita=seguimiento.numero_cita + 1
+            )
+            messages.success(request, f"Cita {seguimiento.numero_cita} aprobada. Se ha programado la cita {seguimiento.numero_cita + 1}.")
+        else:
+            messages.success(request, f"Cita {seguimiento.numero_cita} aprobada. Proceso de seguimiento completado.")
+        
+        return redirect('admin_seguimiento_mascotas')
+    return redirect('admin_seguimiento_mascotas')
+
+@admin_required
+def denegar_seguimiento(request, seguimiento_id):
+    if request.method == 'POST':
+        seguimiento = get_object_or_404(SeguimientoMascota, id=seguimiento_id)
+        seguimiento.completada = True
+        seguimiento.fecha_completada = timezone.now()
+        seguimiento.observaciones = "Cita denegada - Problemas en el seguimiento"
+        seguimiento.save()
+        
+        # Cambiar estado de la mascota a disponible
+        mascota = seguimiento.mascota
+        estado_anterior = mascota.estado_adopcion
+        mascota.estado_adopcion = 'disponible'
+        mascota.fecha_adopcion = None
+        mascota.save()
+        
+        # Registrar en el historial
+        HistorialMascota.objects.create(
+            mascota=mascota,
+            estado_anterior=estado_anterior,
+            estado_nuevo='disponible',
+            usuario=request.user,
+            observacion=f"Devuelto por problemas en seguimiento (cita {seguimiento.numero_cita})"
+        )
+        
+        # Eliminar citas futuras de esta mascota
+        SeguimientoMascota.objects.filter(
+            mascota=mascota,
+            completada=False
+        ).delete()
+        
+        messages.warning(request, f"Cita {seguimiento.numero_cita} denegada. La mascota {mascota.nombre} ha vuelto a estar disponible.")
+        return redirect('admin_seguimiento_mascotas')
+    return redirect('admin_seguimiento_mascotas')
+
+@admin_required
+def cambiar_fecha_seguimiento(request, seguimiento_id):
+    seguimiento = get_object_or_404(SeguimientoMascota, id=seguimiento_id)
+    if request.method == 'POST':
+        nueva_fecha = request.POST.get('nueva_fecha')
+        if nueva_fecha:
+            seguimiento.proxima_cita = nueva_fecha
+            seguimiento.save()
+            # Enviar correo al adoptante
+            from django.core.mail import send_mail
+            from django.template.loader import render_to_string
+            from django.conf import settings
+            asunto = f"Nueva fecha para el seguimiento de {seguimiento.mascota.nombre}"
+            mensaje_html = render_to_string('emails/seguimiento_fecha_cambiada.html', {
+                'mascota': seguimiento.mascota,
+                'adoptante': seguimiento.adoptante,
+                'nueva_fecha': nueva_fecha
+            })
+            mensaje_txt = render_to_string('emails/seguimiento_fecha_cambiada.txt', {
+                'mascota': seguimiento.mascota,
+                'adoptante': seguimiento.adoptante,
+                'nueva_fecha': nueva_fecha
+            })
+            send_mail(
+                asunto,
+                mensaje_txt,
+                settings.DEFAULT_FROM_EMAIL,
+                [seguimiento.adoptante.email],
+                html_message=mensaje_html
+            )
+            messages.success(request, f"La fecha de la cita fue cambiada y se notificó al adoptante.")
+        else:
+            messages.error(request, "Debes seleccionar una nueva fecha.")
+    return redirect('admin_seguimiento_mascotas')

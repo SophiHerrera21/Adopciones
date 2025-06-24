@@ -305,6 +305,93 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Pestaña de Mis Seguimientos -->
+        <div class="tab-pane fade" id="seguimientos" role="tabpanel" tabindex="0">
+            <div class="card card-body mt-3">
+                {% if seguimientos %}
+                    <h4 class="card-title mb-3">Mis Próximas Citas de Seguimiento</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mascota</th>
+                                    <th>Cita</th>
+                                    <th>Fecha Programada</th>
+                                    <th>Estado</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for seguimiento in seguimientos %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if seguimiento.mascota.imagen_principal %}
+                                                <img src="{{ seguimiento.mascota.imagen_principal.url }}" 
+                                                     class="profile-pet-image" 
+                                                     alt="{{ seguimiento.mascota.nombre }}">
+                                            {% else %}
+                                                <div class="profile-pet-image image-placeholder d-flex align-items-center justify-content-center">
+                                                    <i class="fas fa-paw"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div class="ms-2">
+                                                <strong>{{ seguimiento.mascota.nombre }}</strong><br>
+                                                <small class="text-muted">{{ seguimiento.mascota.get_tipo_display }} • {{ seguimiento.mascota.get_sexo_display }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">Cita {{ seguimiento.numero_cita }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ seguimiento.proxima_cita|date:"d/m/Y" }}</strong><br>
+                                        <small class="text-muted">{{ seguimiento.proxima_cita|date:"l" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if seguimiento.completada %}
+                                            <span class="badge bg-success">Completada</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if seguimiento.observaciones %}
+                                            <small class="text-muted">{{ seguimiento.observaciones }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Sin observaciones</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-info-circle me-2"></i>Información importante:</h6>
+                        <ul class="mb-0">
+                            <li>Las citas de seguimiento son obligatorias para asegurar el bienestar de tu mascota adoptada.</li>
+                            <li>Si necesitas reprogramar, contacta al equipo de Luna & Lía con anticipación.</li>
+                            <li>Recibirás recordatorios por email antes de cada cita.</li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <span style="font-size: 4rem;">📅</span>
+                        </div>
+                        <h4>No tienes seguimientos programados</h4>
+                        <p class="text-muted">Los seguimientos aparecerán aquí una vez que tengas mascotas adoptadas.</p>
+                        <a href="{% url 'lista_mascotas' %}" class="btn btn-primary">
+                            <i class="fas fa-heart me-2"></i>Ver Mascotas Disponibles
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 

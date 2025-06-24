@@ -1,0 +1,12 @@
+Hola, {{ seguimiento.adoptante.get_full_name|default:seguimiento.adoptante.username }}.
+
+Te recordamos que hoy ({{ seguimiento.proxima_cita|date:"l, d \d\e F \d\e Y" }}) tienes programada la cita de seguimiento número {{ seguimiento.numero_cita }} para la mascota {{ seguimiento.mascota.nombre }}.
+
+Un voluntario de la fundación se pondrá en contacto contigo para la visita o llamada de seguimiento.
+
+Si tienes alguna pregunta o necesitas reprogramar, por favor responde a este correo o comunícate con nosotros.
+
+¡Gracias por tu compromiso y por darle un hogar a un peludo rescatado!
+
+---
+© {% now "Y" %} Luna & Lía: Rescatando Huellas. 

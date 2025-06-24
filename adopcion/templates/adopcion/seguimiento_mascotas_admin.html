@@ -1,0 +1,140 @@
+{% extends 'adopcion/base.html' %}
+{% block title %}Seguimiento de Mascotas - Admin{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4"><i class="fas fa-calendar-check me-2"></i>Seguimiento de Mascotas</h1>
+    
+    <!-- Historial de cambios de estado -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-history me-2"></i>Historial de Cambios de Estado</h5>
+        </div>
+        <div class="card-body">
+            {% if historial %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Mascota</th>
+                            <th>Estado Anterior</th>
+                            <th>Estado Nuevo</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for h in historial %}
+                        <tr>
+                            <td>{{ h.mascota.nombre }}</td>
+                            <td><span class="badge bg-secondary">{{ h.estado_anterior }}</span></td>
+                            <td><span class="badge bg-primary">{{ h.estado_nuevo }}</span></td>
+                            <td>{{ h.fecha_cambio|date:"d/m/Y H:i" }}</td>
+                            <td>{{ h.usuario.get_full_name|default:h.usuario.username }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay historial de cambios de estado.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Seguimientos -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-calendar-alt me-2"></i>Citas de Seguimiento</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mascota</th>
+                            <th>Adoptante</th>
+                            <th>Cita</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Observaciones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for seguimiento in seguimientos %}
+                        <tr>
+                            <td>{{ seguimiento.mascota.nombre }}</td>
+                            <td>{{ seguimiento.adoptante.get_full_name|default:seguimiento.adoptante.username }}</td>
+                            <td>Cita {{ seguimiento.numero_cita }}</td>
+                            <td>{{ seguimiento.proxima_cita|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if seguimiento.completada %}
+                                    <span class="badge bg-success">Completada</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ seguimiento.observaciones|default:"-" }}</td>
+                            <td>
+                                {% if not seguimiento.completada %}
+                                <div class="btn-group" role="group">
+                                    <form method="post" action="{% url 'aprobar_seguimiento' seguimiento.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success-custom btn-sm"
+                                                onclick="return confirm('¿Confirmar que la cita salió bien?')">
+                                            <i class="fas fa-check"></i> Aprobar
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'denegar_seguimiento' seguimiento.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger-custom btn-sm"
+                                                onclick="return confirm('¿Confirmar que la cita salió mal? La mascota volverá a estar disponible.')">
+                                            <i class="fas fa-times"></i> Denegar
+                                        </button>
+                                    </form>
+                                    <!-- Botón para cambiar fecha -->
+                                    <button type="button" class="btn btn-warning-custom btn-sm" data-bs-toggle="modal" data-bs-target="#cambiarFechaModal{{ seguimiento.id }}">
+                                        <i class="fas fa-calendar-alt"></i> Cambiar fecha
+                                    </button>
+                                </div>
+                                <!-- Modal para cambiar fecha -->
+                                <div class="modal fade" id="cambiarFechaModal{{ seguimiento.id }}" tabindex="-1" aria-labelledby="cambiarFechaLabel{{ seguimiento.id }}" aria-hidden="true">
+                                  <div class="modal-dialog">
+                                    <div class="modal-content">
+                                      <form method="post" action="{% url 'cambiar_fecha_seguimiento' seguimiento.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header bg-beige">
+                                          <h5 class="modal-title" id="cambiarFechaLabel{{ seguimiento.id }}"><i class="fas fa-calendar-alt me-2"></i>Cambiar fecha de cita</h5>
+                                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                          <label for="nueva_fecha_{{ seguimiento.id }}" class="form-label">Nueva fecha:</label>
+                                          <input type="date" class="form-control" name="nueva_fecha" id="nueva_fecha_{{ seguimiento.id }}" required min="{{ today|date:'Y-m-d' }}">
+                                        </div>
+                                        <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                                          <button type="submit" class="btn btn-primary-custom">Guardar</button>
+                                        </div>
+                                      </form>
+                                    </div>
+                                  </div>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">Ya procesada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center p-4">No hay seguimientos programados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+</div>
+{% endblock %} 

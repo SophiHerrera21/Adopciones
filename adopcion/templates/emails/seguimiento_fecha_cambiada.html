@@ -1,0 +1,15 @@
+<html>
+  <body style="font-family: Arial, sans-serif; background: #f8f5f0; color: #4e342e;">
+    <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #e0cfc2; padding: 32px;">
+      <h2 style="color: #795548;">¡Hola {{ adoptante.get_full_name|default:adoptante.username }}!</h2>
+      <p>Te informamos que la fecha de la próxima cita de seguimiento para <strong>{{ mascota.nombre }}</strong> ha sido <strong>cambiada</strong> por el equipo de Luna & Lía.</p>
+      <p style="font-size: 1.1em; margin: 24px 0;">
+        <strong>Nueva fecha de la cita:</strong><br>
+        <span style="font-size: 1.3em; color: #a1887f;">{{ nueva_fecha|date:'d/m/Y' }}</span>
+      </p>
+      <p>Si tienes alguna duda o necesitas reprogramar, por favor responde a este correo o comunícate con nosotros.</p>
+      <p style="margin-top: 32px; color: #a1887f;">Gracias por tu compromiso y cariño con {{ mascota.nombre }}.<br>El equipo de Luna & Lía</p>
+      <img src="https://i.imgur.com/8QfQ2Qp.png" alt="Luna & Lía" style="width: 120px; margin-top: 24px;">
+    </div>
+  </body>
+</html> 
