@@ -10,20 +10,26 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
+                        <th>Imagen</th>
                         <th>Nombre</th>
                         <th>Edad (meses)</th>
                         <th>Peso (kg)</th>
                         <th>Tipo</th>
                         <th>Estado</th>
-                        <th>Acción</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for mascota in mascotas %}
                     <tr>
                         <td>{{ mascota.id }}</td>
+                        <td>
+                            <div class="mascota-img-frame">
+                                <img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}">
+                            </div>
+                        </td>
                         <td><input type="text" name="nombre_{{ mascota.id }}" value="{{ mascota.nombre }}" class="form-control" required></td>
-                        <td><input type="number" name="edad_{{ mascota.id }}" value="{{ mascota.edad_aproximada }}" min="1" max="204" class="form-control" required></td>
+                        <td><input type="number" name="edad_{{ mascota.id }}" value="{{ mascota.edad_aproximada_meses }}" min="1" max="204" class="form-control" required></td>
                         <td><input type="number" name="peso_{{ mascota.id }}" value="{{ mascota.peso }}" min="0.01" max="200" step="0.01" class="form-control" required></td>
                         <td>
                             <select name="tipo_{{ mascota.id }}" class="form-select">
@@ -39,7 +45,19 @@
                                 <option value="no_disponible" {% if mascota.estado_adopcion == 'no_disponible' %}selected{% endif %}>No Disponible</option>
                             </select>
                         </td>
-                        <td><button type="submit" class="btn btn-primary btn-sm">Guardar</button></td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="submit" class="btn btn-primary btn-sm" title="Guardar cambios">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                                <a href="{% url 'seguimiento_mascota' mascota.id %}" class="btn btn-info btn-sm" title="Seguimiento">
+                                    <i class="fas fa-heartbeat"></i>
+                                </a>
+                                <a href="{% url 'mascota_detalle' mascota.id %}" class="btn btn-secondary btn-sm" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

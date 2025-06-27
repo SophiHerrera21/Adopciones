@@ -1,0 +1,408 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Búsqueda Múltiple de Donantes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .stats-label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .donation-row {
+        transition: background-color 0.3s ease;
+    }
+    
+    .donation-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .status-badge {
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-search me-2"></i>
+                Búsqueda Múltiple de Donantes
+            </h1>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-number">{{ total_donaciones }}</div>
+                <div class="stats-label">Total Donaciones</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-number">${{ total_valor|floatformat:0 }}</div>
+                <div class="stats-label">Valor Total</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-number">{{ donaciones.paginator.num_pages }}</div>
+                <div class="stats-label">Páginas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-card">
+        <h5 class="card-title mb-3">
+            <i class="fas fa-filter me-2"></i>
+            Filtros de Búsqueda
+        </h5>
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="nombre" class="form-label">Nombre del Donante</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" 
+                       value="{{ filtros_activos.nombre }}" placeholder="Buscar por nombre...">
+            </div>
+            <div class="col-md-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" 
+                       value="{{ filtros_activos.email }}" placeholder="Buscar por email...">
+            </div>
+            <div class="col-md-3">
+                <label for="tipo_donacion" class="form-label">Tipo de Donación</label>
+                <select class="form-control" id="tipo_donacion" name="tipo_donacion">
+                    <option value="">Todos los tipos</option>
+                    <option value="monetaria" {% if filtros_activos.tipo_donacion == 'monetaria' %}selected{% endif %}>Monetaria</option>
+                    <option value="insumos" {% if filtros_activos.tipo_donacion == 'insumos' %}selected{% endif %}>Insumos</option>
+                    <option value="servicios" {% if filtros_activos.tipo_donacion == 'servicios' %}selected{% endif %}>Servicios</option>
+                    <option value="especie" {% if filtros_activos.tipo_donacion == 'especie' %}selected{% endif %}>En Especie</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="estado_donacion" class="form-label">Estado</label>
+                <select class="form-control" id="estado_donacion" name="estado_donacion">
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente" {% if filtros_activos.estado_donacion == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="confirmada" {% if filtros_activos.estado_donacion == 'confirmada' %}selected{% endif %}>Confirmada</option>
+                    <option value="rechazada" {% if filtros_activos.estado_donacion == 'rechazada' %}selected{% endif %}>Rechazada</option>
+                    <option value="cancelada" {% if filtros_activos.estado_donacion == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
+                       value="{{ filtros_activos.fecha_inicio }}">
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
+                       value="{{ filtros_activos.fecha_fin }}">
+            </div>
+            <div class="col-md-3">
+                <label for="monto_min" class="form-label">Monto Mínimo</label>
+                <input type="number" class="form-control" id="monto_min" name="monto_min" 
+                       value="{{ filtros_activos.monto_min }}" placeholder="Monto mínimo">
+            </div>
+            <div class="col-md-3">
+                <label for="monto_max" class="form-label">Monto Máximo</label>
+                <input type="number" class="form-control" id="monto_max" name="monto_max" 
+                       value="{{ filtros_activos.monto_max }}" placeholder="Monto máximo">
+            </div>
+            <div class="col-md-3">
+                <label for="frecuencia" class="form-label">Frecuencia</label>
+                <select class="form-control" id="frecuencia" name="frecuencia">
+                    <option value="">Todas las frecuencias</option>
+                    <option value="unica" {% if filtros_activos.frecuencia == 'unica' %}selected{% endif %}>Donación Única</option>
+                    <option value="mensual" {% if filtros_activos.frecuencia == 'mensual' %}selected{% endif %}>Donación Mensual</option>
+                    <option value="trimestral" {% if filtros_activos.frecuencia == 'trimestral' %}selected{% endif %}>Donación Trimestral</option>
+                    <option value="semestral" {% if filtros_activos.frecuencia == 'semestral' %}selected{% endif %}>Donación Semestral</option>
+                    <option value="anual" {% if filtros_activos.frecuencia == 'anual' %}selected{% endif %}>Donación Anual</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <a href="{% url 'busqueda_multiple_donantes' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Limpiar Filtros
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas por Categorías -->
+    {% if estadisticas_por_tipo or estadisticas_por_estado or estadisticas_por_frecuencia %}
+    <div class="row mb-4">
+        {% if estadisticas_por_tipo %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Por Tipo de Donación</h6>
+                </div>
+                <div class="card-body">
+                    {% for tipo, count in estadisticas_por_tipo.items %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ tipo }}</span>
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if estadisticas_por_estado %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Por Estado</h6>
+                </div>
+                <div class="card-body">
+                    {% for estado, count in estadisticas_por_estado.items %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ estado|title }}</span>
+                        <span class="badge bg-{% if estado == 'confirmada' %}success{% elif estado == 'pendiente' %}warning{% else %}secondary{% endif %}">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if estadisticas_por_frecuencia %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Por Frecuencia</h6>
+                </div>
+                <div class="card-body">
+                    {% for frecuencia, count in estadisticas_por_frecuencia.items %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ frecuencia }}</span>
+                        <span class="badge bg-info">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Resultados -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>
+                Resultados ({{ total_donaciones }} donaciones encontradas)
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if donaciones %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Donante</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Valor</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donacion in donaciones %}
+                        <tr class="donation-row">
+                            <td>
+                                {% if donacion.anonimo %}
+                                    <span class="text-muted">Anónimo</span>
+                                {% else %}
+                                    {{ donacion.nombre_donante }} {{ donacion.apellido_donante }}
+                                {% endif %}
+                            </td>
+                            <td>{{ donacion.email_donante }}</td>
+                            <td>
+                                <span class="badge bg-{% if donacion.tipo_donacion == 'monetaria' %}success{% elif donacion.tipo_donacion == 'insumos' %}info{% elif donacion.tipo_donacion == 'servicios' %}warning{% else %}secondary{% endif %} status-badge">
+                                    {{ donacion.get_tipo_donacion_display }}
+                                </span>
+                            </td>
+                            <td>{{ donacion.get_descripcion_completa|truncatechars:50 }}</td>
+                            <td>
+                                {% if donacion.monto %}
+                                    ${{ donacion.monto|floatformat:0 }}
+                                {% elif donacion.valor_estimado %}
+                                    ${{ donacion.valor_estimado|floatformat:0 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if donacion.estado_donacion == 'confirmada' %}success{% elif donacion.estado_donacion == 'pendiente' %}warning{% elif donacion.estado_donacion == 'rechazada' %}danger{% else %}secondary{% endif %} status-badge">
+                                    {{ donacion.get_estado_donacion_display }}
+                                </span>
+                            </td>
+                            <td>{{ donacion.fecha_donacion|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#donacionModal{{ donacion.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        
+                        <!-- Modal para detalles -->
+                        <div class="modal fade" id="donacionModal{{ donacion.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Detalles de la Donación</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Información del Donante</h6>
+                                                <p><strong>Nombre:</strong> {{ donacion.nombre_donante }} {{ donacion.apellido_donante }}</p>
+                                                <p><strong>Email:</strong> {{ donacion.email_donante }}</p>
+                                                <p><strong>Teléfono:</strong> {{ donacion.telefono_donante|default:"No especificado" }}</p>
+                                                <p><strong>Ciudad:</strong> {{ donacion.ciudad_donante|default:"No especificada" }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Información de la Donación</h6>
+                                                <p><strong>Tipo:</strong> {{ donacion.get_tipo_donacion_display }}</p>
+                                                <p><strong>Frecuencia:</strong> {{ donacion.get_frecuencia_display }}</p>
+                                                <p><strong>Estado:</strong> {{ donacion.get_estado_donacion_display }}</p>
+                                                <p><strong>Fecha:</strong> {{ donacion.fecha_donacion|date:"d/m/Y H:i" }}</p>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <h6>Detalles Específicos</h6>
+                                                {% if donacion.tipo_donacion == 'monetaria' %}
+                                                    <p><strong>Monto:</strong> ${{ donacion.monto|floatformat:0 }}</p>
+                                                    <p><strong>Medio de Pago:</strong> {{ donacion.get_medio_pago_display }}</p>
+                                                {% elif donacion.tipo_donacion == 'insumos' %}
+                                                    <p><strong>Categoría:</strong> {{ donacion.categoria_insumo }}</p>
+                                                    <p><strong>Cantidad:</strong> {{ donacion.cantidad_insumo }} {{ donacion.unidad_medida }}</p>
+                                                    <p><strong>Descripción:</strong> {{ donacion.descripcion_insumo }}</p>
+                                                {% elif donacion.tipo_donacion == 'servicios' %}
+                                                    <p><strong>Tipo de Servicio:</strong> {{ donacion.tipo_servicio }}</p>
+                                                    <p><strong>Horas:</strong> {{ donacion.horas_servicio }}</p>
+                                                    <p><strong>Descripción:</strong> {{ donacion.descripcion_servicio }}</p>
+                                                {% elif donacion.tipo_donacion == 'especie' %}
+                                                    <p><strong>Descripción:</strong> {{ donacion.descripcion_especie }}</p>
+                                                    <p><strong>Valor Estimado:</strong> ${{ donacion.valor_estimado|floatformat:0 }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if donacion.motivo_donacion %}
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <h6>Motivo de la Donación</h6>
+                                                <p>{{ donacion.motivo_donacion }}</p>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if donaciones.has_other_pages %}
+            <nav aria-label="Paginación de donaciones">
+                <ul class="pagination justify-content-center">
+                    {% if donaciones.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ donaciones.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in donaciones.paginator.page_range %}
+                        {% if donaciones.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > donaciones.number|add:'-3' and num < donaciones.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if donaciones.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ donaciones.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ donaciones.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No se encontraron donaciones</h5>
+                <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

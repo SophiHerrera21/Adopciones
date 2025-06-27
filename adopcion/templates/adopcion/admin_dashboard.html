@@ -60,6 +60,16 @@
         align-items: center;
         justify-content: center;
     }
+    .mascota-img-frame {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 5px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 {% endblock %}
 
@@ -142,8 +152,17 @@
                 <a href="{% url 'admin_editar_mascotas' %}" class="list-group-item list-group-item-action">
                     <i class="fas fa-paw me-2"></i>Edición Masiva de Mascotas
                 </a>
-                <a href="{% url 'admin_seguimiento_mascotas' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-calendar-check me-2"></i>Seguimiento de Mascotas
+                <a href="{% url 'busqueda_mascotas_avanzada' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-search me-2"></i>Búsqueda Avanzada de Mascotas
+                </a>
+                <a href="{% url 'busqueda_multiple_donaciones' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-hand-holding-heart me-2"></i>Búsqueda Múltiple de Donaciones
+                </a>
+                <a href="{% url 'busqueda_donantes' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-users me-2"></i>Búsqueda de Donantes
+                </a>
+                <a href="{% url 'gestionar_categorias' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tags me-2"></i>Gestionar Categorías de Donación
                 </a>
             </div>
         </div>
@@ -163,12 +182,12 @@
                     <tbody>
                         {% for mascota in ultimas_mascotas %}
                         <tr>
-                            <td><img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}" class="admin-pet-image"></td>
+                            <td><div class="mascota-img-frame"><img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}" class="admin-pet-image"></div></td>
                             <td>{{ mascota.nombre }}</td>
                             <td><span class="badge bg-info text-dark">{{ mascota.get_estado_display }}</span></td>
                             <td>{{ mascota.fecha_ingreso|date:"d/m/Y" }}</td>
                             <td class="text-end">
-                                <a href="{% url 'editar_mascota' mascota.id %}" class="btn btn-sm btn-outline-primary">
+                                <a href="{% url 'editar_mascota_mejorado' mascota.id %}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
                             </td>
@@ -205,14 +224,14 @@
         <div class="container">
             <h2 class="section-title">Acciones Rápidas</h2>
             <div class="actions-grid">
-                <a href="{% url 'agregar_mascota' %}" class="action-card">
+                <a href="{% url 'admin_agregar_mascota' %}" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-plus-circle"></i>
                     </div>
                     <div class="action-title">Agregar Peludo</div>
                     <div class="action-description">Registrar una nueva mascota en la fundación</div>
                 </a>
-                <a href="{% url 'lista_solicitudes' %}" class="action-card">
+                <a href="{% url 'admin_solicitudes' %}" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-list"></i>
                     </div>
@@ -280,7 +299,7 @@
                 </tbody>
             </table>
             <div class="text-end">
-                <a href="{% url 'lista_solicitudes' %}" class="btn btn-outline-primary">Ver todas las solicitudes</a>
+                <a href="{% url 'admin_solicitudes' %}" class="btn btn-outline-primary">Ver todas las solicitudes</a>
             </div>
         </div>
     </div>

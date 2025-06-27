@@ -1,4 +1,6 @@
 {% load static %}
+{% load admin_filters %}
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -41,21 +43,38 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    {% if user.is_authenticated and user.email|slice:"-13:" == '@lunaylia.com' %}
+                    {% if user.is_authenticated and user.email|is_admin_email %}
                         <!-- Menú del Administrador -->
                         <ul class="navbar-nav ms-auto">
                             <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="fas fa-chart-line"></i> Panel</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'agregar_mascota' %}"><i class="fas fa-plus"></i> Añadir Mascota</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'lista_solicitudes' %}"><i class="fas fa-file-alt"></i> Solicitudes</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_citas_pre_adopcion' %}"><i class="fas fa-calendar-alt"></i> Citas</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_seguimiento_mascotas' %}"><i class="fas fa-calendar-check"></i> Seguimientos</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'pagina_reportes' %}"><i class="fas fa-file-pdf"></i> Reportes</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'inicio' %}"><i class="fas fa-globe"></i> Ver Sitio Público</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_agregar_mascota' %}"><i class="fas fa-plus"></i> Añadir Mascota</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_solicitudes' %}"><i class="fas fa-file-alt"></i> Solicitudes</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_reportes' %}"><i class="fas fa-file-pdf"></i> Reportes</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDonaciones" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-heart"></i> Donaciones
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownDonaciones">
+                                    <li><a class="dropdown-item" href="{% url 'busqueda_donantes' %}"><i class="fas fa-search"></i> Buscar Donantes</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'gestionar_categorias' %}"><i class="fas fa-tags"></i> Gestionar Categorías</a></li>
+                                </ul>
+                            </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-user-shield"></i> {{ user.username }}
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownAdmin">
+                                    <li>
+                                        <a class="dropdown-item position-relative" href="{% url 'notificaciones' %}">
+                                            <i class="fas fa-bell"></i> Notificaciones
+                                            {% if tiene_notificaciones %}
+                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                    {{ notificaciones_no_leidas }}
+                                                </span>
+                                            {% endif %}
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                                 </ul>
                             </li>
@@ -85,6 +104,16 @@
                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
                                         <li><a class="dropdown-item" href="{% url 'perfil' %}">Mi Perfil</a></li>
                                         <li><a class="dropdown-item" href="{% url 'mis_favoritos' %}">Mis Favoritos</a></li>
+                                        <li>
+                                            <a class="dropdown-item position-relative" href="{% url 'notificaciones' %}">
+                                                <i class="fas fa-bell"></i> Notificaciones
+                                                {% if tiene_notificaciones %}
+                                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                        {{ notificaciones_no_leidas }}
+                                                    </span>
+                                                {% endif %}
+                                            </a>
+                                        </li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{% url 'logout' %}" onclick="event.preventDefault(); document.getElementById('logout-form-nav').submit();">
                                             <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión</a>

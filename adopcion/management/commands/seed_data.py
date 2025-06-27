@@ -3,7 +3,7 @@ import os
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
-from adopcion.models import Mascota, Donacion, SolicitudAdopcion, Usuario
+from adopcion.models import Mascota, Donacion, SolicitudAdopcion, Usuario, CategoriaDonacion
 import random
 from datetime import date, timedelta
 from decimal import Decimal
@@ -93,7 +93,7 @@ class Command(BaseCommand):
         nombres_gato = ["Misha", "Luna", "Nala", "Salem", "Oliver", "Cleo", "Griselo", "Mittens", "Shadow", "Whiskers"]
         
         # Estados de adopción para mostrar diferentes situaciones
-        estados_adopcion = ['disponible'] * 6 + ['en_proceso'] * 3 + ['adoptado'] * 4 + ['en_tratamiento'] * 2
+        estados_adopcion = ['disponible'] * 6 + ['en_proceso'] * 3 + ['adoptado'] * 4 + ['no_disponible'] * 2
         
         for i, estado in enumerate(estados_adopcion):
             if i < len(nombres_perro) + len(nombres_gato):
@@ -115,10 +115,10 @@ class Command(BaseCommand):
                     mascota = Mascota.objects.create(
                         nombre=nombre,
                         tipo=tipo,
-                        edad_aproximada=random.randint(3, 72),
+                        edad_aproximada_meses=random.randint(3, 72),
                         sexo=random.choice(['macho', 'hembra']),
                         tamaño=random.choice(['pequeño', 'mediano', 'grande']),
-                        estado_salud='Bueno y listo para un hogar' if estado != 'en_tratamiento' else 'En tratamiento médico',
+                        estado_salud='Bueno y listo para un hogar' if estado != 'no_disponible' else 'En tratamiento médico',
                         descripcion=f'Un adorable {tipo} llamado {nombre}, lleno de energía y amor para dar.',
                         personalidad=random.choice(['Juguetón', 'Tranquilo', 'Cariñoso', 'Independiente']),
                         esterilizado=random.choice([True, False]),
@@ -137,8 +137,18 @@ class Command(BaseCommand):
         """Crear donaciones variadas para mostrar en reportes."""
         usuarios = list(Usuario.objects.all())
         tipos_donacion = ['monetaria'] * 8 + ['insumos'] * 7
-        medios_pago = ['PSE', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia Bancaria']
-        categorias_insumo = ['Alimentos', 'Medicamentos', 'Juguetes', 'Camas y Cobijas', 'Productos de Limpieza']
+        medios_pago = ['pse', 'tarjeta_credito', 'tarjeta_debito', 'transferencia']
+        
+        # Obtener categorías existentes
+        categorias = list(CategoriaDonacion.objects.all())
+        if not categorias:
+            # Si no hay categorías, crear algunas básicas
+            categorias = [
+                CategoriaDonacion.objects.create(nombre='Alimentos', descripcion='Comida para mascotas'),
+                CategoriaDonacion.objects.create(nombre='Medicamentos', descripcion='Medicamentos veterinarios'),
+                CategoriaDonacion.objects.create(nombre='Juguetes', descripcion='Juguetes para mascotas'),
+                CategoriaDonacion.objects.create(nombre='Accesorios', descripcion='Collares, correas, etc.'),
+            ]
         
         montos_monetarios = [50000, 100000, 150000, 200000, 250000, 300000, 500000, 750000, 1000000]
         descripciones_insumos = [
@@ -174,7 +184,7 @@ class Command(BaseCommand):
                         email_donante=usuario.email,
                         telefono_donante=f"+57 300 {random.randint(1000000, 9999999)}",
                         tipo_donacion=tipo,
-                        categoria_insumo=random.choice(categorias_insumo),
+                        categoria_insumo=random.choice(categorias),
                         descripcion_insumo=random.choice(descripciones_insumos),
                         fecha_donacion=date.today() - timedelta(days=random.randint(1, 90))
                     )
@@ -198,56 +208,35 @@ class Command(BaseCommand):
                 
                 # Asignar mascota según el estado
                 if estado == 'aprobada' and mascotas_en_proceso:
-                    mascota = mascotas_en_proceso.pop(0)
+                    mascota = random.choice(mascotas_en_proceso)
                 elif mascotas_disponibles:
-                    mascota = mascotas_disponibles.pop(0)
+                    mascota = random.choice(mascotas_disponibles)
                 else:
                     continue
                 
                 solicitud = SolicitudAdopcion.objects.create(
                     usuario=usuario,
                     mascota=mascota,
-                    estado_solicitud=estado,
-                    experiencia_mascotas=f'He tenido {random.randint(1, 3)} mascotas anteriormente',
-                    plan_vacaciones='Tengo familia que puede cuidar la mascota',
-                    motivo_adopcion='Busco compañía y amor incondicional',
-                    manejo_comportamiento='Soy paciente y dedicado al entrenamiento',
-                    preferencias_mascota='Me adapto a cualquier personalidad',
-                    comentario_extra='Estoy muy emocionado por esta oportunidad',
-                    adultos_en_casa=random.randint(1, 3),
-                    ninos_en_casa=random.randint(0, 2),
-                    edades_ninos='5 y 8 años' if random.choice([True, False]) else '',
-                    vivienda=random.choice(['casa', 'apartamento']),
+                    vivienda=random.choice(['casa', 'apartamento', 'finca']),
                     es_propia=random.choice([True, False]),
                     tiene_patio=random.choice([True, False]),
-                    tamano_patio='Mediano' if random.choice([True, False]) else 'Grande',
+                    adultos_en_casa=random.randint(1, 4),
+                    ninos_en_casa=random.randint(0, 3),
                     tuvo_mascotas=random.choice([True, False]),
-                    otras_mascotas='No tengo otras mascotas actualmente',
-                    tiempo_diario=f'{random.randint(2, 6)} horas diarias',
+                    tiempo_diario=random.choice(['1-2 horas', '2-4 horas', '4+ horas']),
                     todos_deacuerdo=True,
                     cuidador_principal=usuario.nombre,
-                    ingreso_aproximado=random.choice(['2000000', '3500000', '5000000', '8000000']),
-                    presupuesto_mensual_mascota=random.choice(['200000', '350000', '500000', '800000']),
+                    plan_vacaciones='Buscar cuidador o llevarlo con nosotros',
+                    ingreso_aproximado=random.choice(['1-2 SMLV', '2-4 SMLV', '4+ SMLV']),
+                    presupuesto_mensual_mascota=random.choice(['50-100k', '100-200k', '200k+']),
                     tiene_veterinario=random.choice([True, False]),
-                    nombre_veterinario='Dr. García' if random.choice([True, False]) else '',
+                    motivo_adopcion='Quiero darle un hogar amoroso a una mascota que lo necesite',
+                    manejo_comportamiento='Buscaría ayuda profesional si fuera necesario',
                     compromiso_largo_plazo=True,
-                    acepta_visitas_seguimiento=True,
-                    fecha_solicitud=date.today() - timedelta(days=random.randint(1, 30))
+                    estado_solicitud=estado
                 )
                 
-                # Si está aprobada, actualizar estado de la mascota
-                if estado == 'aprobada':
-                    mascota.estado_adopcion = 'adoptado'
-                    mascota.save()
-                    solicitud.fecha_respuesta = date.today() - timedelta(days=random.randint(1, 7))
-                    solicitud.comentarios_admin = 'Solicitud aprobada. La familia cumple con todos los requisitos.'
-                    solicitud.save()
-                elif estado == 'rechazada':
-                    solicitud.fecha_respuesta = date.today() - timedelta(days=random.randint(1, 7))
-                    solicitud.comentarios_admin = 'Solicitud rechazada. No cumple con los requisitos mínimos de espacio.'
-                    solicitud.save()
-                
-                self.stdout.write(f'Solicitud creada: {usuario.nombre} -> {mascota.nombre} ({estado})')
+                self.stdout.write(f'Solicitud creada: {usuario.nombre} - {mascota.nombre} ({estado})')
                 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'Error creando solicitud: {e}'))

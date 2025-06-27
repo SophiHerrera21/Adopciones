@@ -1,0 +1,324 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Realizar Donación - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-heart"></i> Realizar Donación
+                    </h3>
+                    <p class="mb-0">Gracias por tu generosidad. Tu donación nos ayuda a seguir rescatando y cuidando mascotas.</p>
+                </div>
+                <div class="card-body">
+                    <!-- Información del usuario -->
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-user"></i> Información del Donante</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nombre:</strong> {{ usuario.nombre }} {{ usuario.apellido }}</p>
+                                <p><strong>Email:</strong> {{ usuario.email }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Teléfono:</strong> {{ usuario.telefono|default:"No proporcionado" }}</p>
+                                <p><strong>Ciudad:</strong> {{ usuario.ciudad|default:"No proporcionada" }}</p>
+                            </div>
+                        </div>
+                        <small class="text-muted">Esta información se usará automáticamente para tu donación.</small>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="donacionForm">
+                        {% csrf_token %}
+                        
+                        <!-- Tipo de Donación -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.tipo_donacion.id_for_label }}" class="form-label">
+                                    <strong>Tipo de Donación *</strong>
+                                </label>
+                                {{ form.tipo_donacion }}
+                                {% if form.tipo_donacion.errors %}
+                                    <div class="text-danger">{{ form.tipo_donacion.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.frecuencia.id_for_label }}" class="form-label">
+                                    <strong>Frecuencia</strong>
+                                </label>
+                                {{ form.frecuencia }}
+                                {% if form.frecuencia.errors %}
+                                    <div class="text-danger">{{ form.frecuencia.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos según tipo de donación -->
+                        <div id="camposMonetaria" class="campos-tipo" style="display: none;">
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <h5><i class="fas fa-money-bill"></i> Información Monetaria</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="{{ form.monto.id_for_label }}" class="form-label">
+                                                <strong>Monto de la Donación *</strong>
+                                            </label>
+                                            {{ form.monto }}
+                                            {% if form.monto.errors %}
+                                                <div class="text-danger">{{ form.monto.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.medio_pago.id_for_label }}" class="form-label">
+                                                <strong>Medio de Pago *</strong>
+                                            </label>
+                                            {{ form.medio_pago }}
+                                            {% if form.medio_pago.errors %}
+                                                <div class="text-danger">{{ form.medio_pago.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <label for="{{ form.comprobante_pago.id_for_label }}" class="form-label">
+                                                <strong>Comprobante de Pago (Opcional)</strong>
+                                            </label>
+                                            {{ form.comprobante_pago }}
+                                            <small class="text-muted">Puedes subir una imagen o PDF del comprobante</small>
+                                            {% if form.comprobante_pago.errors %}
+                                                <div class="text-danger">{{ form.comprobante_pago.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="camposInsumos" class="campos-tipo" style="display: none;">
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning text-white">
+                                    <h5><i class="fas fa-box"></i> Información de Insumos</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="{{ form.categoria_insumo.id_for_label }}" class="form-label">
+                                                <strong>Categoría de Insumo *</strong>
+                                            </label>
+                                            {{ form.categoria_insumo }}
+                                            {% if form.categoria_insumo.errors %}
+                                                <div class="text-danger">{{ form.categoria_insumo.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.cantidad_insumo.id_for_label }}" class="form-label">
+                                                <strong>Cantidad *</strong>
+                                            </label>
+                                            {{ form.cantidad_insumo }}
+                                            {% if form.cantidad_insumo.errors %}
+                                                <div class="text-danger">{{ form.cantidad_insumo.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.unidad_medida.id_for_label }}" class="form-label">
+                                                <strong>Unidad *</strong>
+                                            </label>
+                                            {{ form.unidad_medida }}
+                                            {% if form.unidad_medida.errors %}
+                                                <div class="text-danger">{{ form.unidad_medida.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <label for="{{ form.descripcion_insumo.id_for_label }}" class="form-label">
+                                                <strong>Descripción del Insumo *</strong>
+                                            </label>
+                                            {{ form.descripcion_insumo }}
+                                            {% if form.descripcion_insumo.errors %}
+                                                <div class="text-danger">{{ form.descripcion_insumo.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="camposServicios" class="campos-tipo" style="display: none;">
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h5><i class="fas fa-tools"></i> Información de Servicios</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="{{ form.tipo_servicio.id_for_label }}" class="form-label">
+                                                <strong>Tipo de Servicio *</strong>
+                                            </label>
+                                            {{ form.tipo_servicio }}
+                                            {% if form.tipo_servicio.errors %}
+                                                <div class="text-danger">{{ form.tipo_servicio.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.horas_servicio.id_for_label }}" class="form-label">
+                                                <strong>Horas de Servicio</strong>
+                                            </label>
+                                            {{ form.horas_servicio }}
+                                            {% if form.horas_servicio.errors %}
+                                                <div class="text-danger">{{ form.horas_servicio.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.fecha_servicio.id_for_label }}" class="form-label">
+                                                <strong>Fecha del Servicio</strong>
+                                            </label>
+                                            {{ form.fecha_servicio }}
+                                            {% if form.fecha_servicio.errors %}
+                                                <div class="text-danger">{{ form.fecha_servicio.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <label for="{{ form.descripcion_servicio.id_for_label }}" class="form-label">
+                                                <strong>Descripción del Servicio *</strong>
+                                            </label>
+                                            {{ form.descripcion_servicio }}
+                                            {% if form.descripcion_servicio.errors %}
+                                                <div class="text-danger">{{ form.descripcion_servicio.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="camposEspecie" class="campos-tipo" style="display: none;">
+                            <div class="card mb-3">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5><i class="fas fa-gift"></i> Información en Especie</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <label for="{{ form.descripcion_especie.id_for_label }}" class="form-label">
+                                                <strong>Descripción de la Donación *</strong>
+                                            </label>
+                                            {{ form.descripcion_especie }}
+                                            {% if form.descripcion_especie.errors %}
+                                                <div class="text-danger">{{ form.descripcion_especie.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="{{ form.valor_estimado.id_for_label }}" class="form-label">
+                                                <strong>Valor Estimado</strong>
+                                            </label>
+                                            {{ form.valor_estimado }}
+                                            {% if form.valor_estimado.errors %}
+                                                <div class="text-danger">{{ form.valor_estimado.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información adicional -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5><i class="fas fa-comment"></i> Información Adicional</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="{{ form.motivo_donacion.id_for_label }}" class="form-label">
+                                            <strong>Motivo de la Donación</strong>
+                                        </label>
+                                        {{ form.motivo_donacion }}
+                                        {% if form.motivo_donacion.errors %}
+                                            <div class="text-danger">{{ form.motivo_donacion.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            {{ form.anonimo }}
+                                            <label class="form-check-label" for="{{ form.anonimo.id_for_label }}">
+                                                <strong>Hacer donación anónima</strong>
+                                            </label>
+                                            <small class="form-text text-muted d-block">
+                                                Tu nombre no aparecerá en los registros públicos
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            {{ form.recibir_informacion }}
+                                            <label class="form-check-label" for="{{ form.recibir_informacion.id_for_label }}">
+                                                <strong>Recibir información sobre el uso de mi donación</strong>
+                                            </label>
+                                            <small class="form-text text-muted d-block">
+                                                Te enviaremos actualizaciones sobre cómo se usa tu donación
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'inicio' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-heart"></i> Realizar Donación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoDonacionSelect = document.getElementById('id_tipo_donacion');
+    const camposTipos = document.querySelectorAll('.campos-tipo');
+    
+    function mostrarCamposSegunTipo() {
+        const tipoSeleccionado = tipoDonacionSelect.value;
+        
+        // Ocultar todos los campos específicos
+        camposTipos.forEach(campo => {
+            campo.style.display = 'none';
+        });
+        
+        // Mostrar campos según el tipo seleccionado
+        if (tipoSeleccionado === 'monetaria') {
+            document.getElementById('camposMonetaria').style.display = 'block';
+        } else if (tipoSeleccionado === 'insumos') {
+            document.getElementById('camposInsumos').style.display = 'block';
+        } else if (tipoSeleccionado === 'servicios') {
+            document.getElementById('camposServicios').style.display = 'block';
+        } else if (tipoSeleccionado === 'especie') {
+            document.getElementById('camposEspecie').style.display = 'block';
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    mostrarCamposSegunTipo();
+    
+    // Ejecutar cuando cambie la selección
+    tipoDonacionSelect.addEventListener('change', mostrarCamposSegunTipo);
+});
+</script>
+{% endblock %} 

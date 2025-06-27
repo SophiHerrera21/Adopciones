@@ -6,37 +6,17 @@
         <div class="pet-card">
             <div class="pet-image-container">
                 <a href="{% url 'mascota_detalle' mascota.id %}">
-                    {% if mascota.imagen_principal %}
-                        <img src="{{ mascota.imagen_principal.url }}" alt="Foto de {{ mascota.nombre }}" class="pet-image">
-                    {% else %}
-                        <img src="{% static 'images/default-pet.png' %}" alt="Imagen por defecto" class="pet-image">
-                    {% endif %}
+                    <div class="mascota-img-frame">
+                        {% if mascota.imagen_principal %}
+                            <img src="{{ mascota.imagen_principal.url }}" alt="Foto de {{ mascota.nombre }}" class="pet-image">
+                        {% else %}
+                            <img src="{% static 'images/default-pet.png' %}" alt="Imagen por defecto" class="pet-image">
+                        {% endif %}
+                    </div>
                 </a>
-                <span class="pet-status-badge {{ mascota.estado_adopcion }}">{{ mascota.get_estado_adopcion_display }}</span>
-                {% if user.is_authenticated %}
-                <button class="btn-favorito" data-mascota-id="{{ mascota.id }}" title="Añadir a favoritos">
-                    <i class="fas fa-heart"></i>
-                </button>
-                {% endif %}
             </div>
-            <div class="pet-info">
+            <div class="pet-info text-center">
                 <h5 class="pet-name"><a href="{% url 'mascota_detalle' mascota.id %}">{{ mascota.nombre }}</a></h5>
-                <div class="pet-badges mb-2">
-                    <span class="badge badge-type">{{ mascota.get_tipo_display }}</span>
-                    <span class="badge badge-sex">{{ mascota.get_sexo_display }}</span>
-                    <span class="badge badge-size">{{ mascota.get_tamaño_display }}</span>
-                </div>
-                <p class="pet-details">
-                    <i class="fas fa-birthday-cake me-1"></i> <span class="pet-age">Edad: {{ mascota.edad_aproximada }} meses</span>
-                    <span class="mx-2">|</span>
-                    <i class="fas fa-ruler-combined me-1"></i> {{ mascota.get_tamaño_display }}
-                </p>
-                <div class="pet-actions mt-3">
-                    <a href="{% url 'mascota_detalle' mascota.id %}" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
-                    {% if mascota.estado_adopcion == 'disponible' %}
-                    <a href="{% url 'solicitar_adopcion' mascota.id %}" class="btn btn-sm btn-primary-custom">¡Adóptame!</a>
-                    {% endif %}
-                </div>
             </div>
         </div>
     </div>

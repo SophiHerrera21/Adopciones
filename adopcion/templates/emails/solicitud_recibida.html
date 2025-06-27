@@ -65,7 +65,7 @@
             <p><strong>Nombre:</strong> {{ solicitud.mascota.nombre }}</p>
             <p><strong>Tipo:</strong> {{ solicitud.mascota.get_tipo_display }}</p>
             <p><strong>Raza:</strong> {{ solicitud.mascota.raza|default:"Mestizo" }}</p>
-            <p><strong>Edad:</strong> {{ solicitud.mascota.edad_aproximada }} meses</p>
+            <p><strong>Edad:</strong> {{ solicitud.mascota.get_edad_display }}</p>
         </div>
         
         <h3>¿Qué sigue?</h3>

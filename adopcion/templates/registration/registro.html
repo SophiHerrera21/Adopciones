@@ -1,29 +1,224 @@
 {% extends 'adopcion/base.html' %}
+{% load static %}
 
-{% block title %}Registrarse - Luna & Lía{% endblock %}
+{% block title %}Registro - Luna & Lía{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <div class="row">
-        <div class="col-md-6 offset-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="card-title text-center">Crear una Cuenta</h3>
-                    <p class="text-center text-muted">Únete a nuestra comunidad y ayúdanos a cambiar vidas.</p>
-                    <hr>
-                    <form method="post">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-plus"></i> Crear Cuenta
+                    </h3>
+                    <p class="mb-0 mt-2">Únete a Luna & Lía y ayuda a cambiar vidas</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="registro-form" novalidate>
                         {% csrf_token %}
-                        {{ form.as_p }}
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary mt-3">Registrarse</button>
+                        
+                        <!-- Información Personal -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_nombre"><i class="fas fa-user"></i> Nombre *</label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nombre.errors %}
+                                            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_apellido"><i class="fas fa-user"></i> Apellido *</label>
+                                {{ form.apellido }}
+                                {% if form.apellido.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.apellido.errors %}
+                                            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Información de Cuenta -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_username"><i class="fas fa-at"></i> Nombre de Usuario *</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.username.errors %}
+                                            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_email"><i class="fas fa-envelope"></i> Correo Electrónico *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.email.errors %}
+                                            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Información de Contacto -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_telefono"><i class="fas fa-phone"></i> Teléfono</label>
+                                {{ form.telefono }}
+                                {% if form.telefono.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.telefono.errors %}
+                                            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Contraseñas -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_password1"><i class="fas fa-lock"></i> Contraseña *</label>
+                                {{ form.password1 }}
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Mínimo 5 caracteres, puede incluir letras, números y símbolos
+                                </small>
+                                {% if form.password1.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.password1.errors %}
+                                            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_password2"><i class="fas fa-lock"></i> Confirmar Contraseña *</label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.password2.errors %}
+                                            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Error:</strong>
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Botón de registro -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus"></i> Crear Cuenta
+                            </button>
+                        </div>
+
+                        <!-- Enlaces adicionales -->
+                        <div class="text-center mt-3">
+                            <p class="mb-0">
+                                ¿Ya tienes una cuenta? 
+                                <a href="{% url 'login' %}" class="text-decoration-none">
+                                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                                </a>
+                            </p>
                         </div>
                     </form>
                 </div>
-                <div class="card-footer text-center">
-                    <small>¿Ya tienes una cuenta? <a href="{% url 'login' %}">Inicia Sesión aquí</a>.</small>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <h6 class="card-title">
+                        <i class="fas fa-heart"></i> ¿Por qué registrarte?
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <i class="fas fa-paw fa-2x text-primary mb-2"></i>
+                            <p class="small">Solicitar adopciones</p>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-heart fa-2x text-danger mb-2"></i>
+                            <p class="small">Guardar favoritos</p>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-hand-holding-heart fa-2x text-success mb-2"></i>
+                            <p class="small">Realizar donaciones</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registro-form');
+    const inputs = form.querySelectorAll('input[pattern]');
+    
+    // Validación en tiempo real
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const pattern = new RegExp(this.pattern);
+            if (this.value && !pattern.test(this.value)) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+        
+        input.addEventListener('blur', function() {
+            if (this.value && this.pattern) {
+                const pattern = new RegExp(this.pattern);
+                if (!pattern.test(this.value)) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                }
+            }
+        });
+    });
+    
+    // Validación de contraseñas
+    const password1 = document.getElementById('{{ form.password1.id_for_label }}');
+    const password2 = document.getElementById('{{ form.password2.id_for_label }}');
+    
+    function validatePasswords() {
+        if (password2.value) {
+            if (password1.value !== password2.value) {
+                password2.classList.add('is-invalid');
+                password2.classList.remove('is-valid');
+            } else {
+                password2.classList.remove('is-invalid');
+                password2.classList.add('is-valid');
+            }
+        }
+    }
+    
+    password1.addEventListener('input', validatePasswords);
+    password2.addEventListener('input', validatePasswords);
+});
+</script>
 {% endblock %} 

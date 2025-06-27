@@ -1,0 +1,55 @@
+{
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": false,
+    "python.analysis.extraPaths": [
+        "./venv/lib/python3.13/site-packages",
+        "./venv/lib/python3.13/site-packages/django",
+        "./venv/lib/python3.13/site-packages/django/contrib",
+        "./venv/lib/python3.13/site-packages/django/core",
+        "./venv/lib/python3.13/site-packages/django/db",
+        "./venv/lib/python3.13/site-packages/django/forms",
+        "./venv/lib/python3.13/site-packages/django/http",
+        "./venv/lib/python3.13/site-packages/django/template",
+        "./venv/lib/python3.13/site-packages/django/utils",
+        "./venv/lib/python3.13/site-packages/django/views"
+    ],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.include": [
+        "**/*.py"
+    ],
+    "python.analysis.exclude": [
+        "**/venv/**",
+        "**/__pycache__/**",
+        "**/migrations/**"
+    ],
+    "python.analysis.ignore": [
+        "**/venv/**"
+    ],
+    "python.analysis.stubPath": "./typings",
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.useLibraryCodeForTypes": true,
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.inlayHints.functionReturnTypes": true,
+    "python.analysis.inlayHints.variableTypes": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.indexing": true,
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "django",
+            "depth": 5
+        },
+        {
+            "name": "django.contrib",
+            "depth": 3
+        },
+        {
+            "name": "django.core",
+            "depth": 3
+        }
+    ]
+} 

@@ -65,7 +65,9 @@
             {% for mascota in mascotas_disponibles %}
             <div class="pet-card">
                 <div class="pet-image-container">
-                    <img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}" class="pet-image">
+                    <div class="mascota-img-frame">
+                        <img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}" class="pet-image">
+                    </div>
                     <div class="pet-overlay">
                         <a href="{% url 'mascota_detalle' mascota.id %}" class="btn btn-primary">Ver Detalles</a>
                     </div>
@@ -74,7 +76,7 @@
                     <h3 class="pet-name">{{ mascota.nombre }}</h3>
                     <p class="pet-details">
                         <span class="pet-type">{{ mascota.get_tipo_display }}</span> • 
-                        <span class="pet-age">{{ mascota.edad_aproximada }} meses</span> • 
+                        <span class="pet-age">{{ mascota.get_edad_display }}</span> • 
                         <span class="pet-size">{{ mascota.get_tamaño_display }}</span>
                     </p>
                     <p class="pet-description">{{ mascota.descripcion|truncatewords:10 }}</p>

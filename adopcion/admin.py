@@ -1,7 +1,9 @@
 from django.contrib import admin
 from .models import (
     Usuario, Mascota, FotoMascota, SolicitudAdopcion, 
-    SeguimientoAdopcion, Favorito, Donacion, Mensaje, ConfiguracionSitio, SeguimientoMascota
+    Favorito, Donacion, Mensaje, ConfiguracionSitio,
+    HistorialMascota, CitaPreAdopcion, CategoriaDonacion, 
+    Notificacion, SeguimientoMascota
 )
 
 # Para mejorar la visualización de las fotos en el admin de Mascota
@@ -32,5 +34,31 @@ class SolicitudAdopcionAdmin(admin.ModelAdmin):
 admin.site.register(Donacion)
 admin.site.register(Mensaje)
 admin.site.register(ConfiguracionSitio)
-admin.site.register(SeguimientoAdopcion)
 admin.site.register(Favorito)
+
+@admin.register(CategoriaDonacion)
+class CategoriaDonacionAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'activa', 'fecha_creacion', 'donaciones_count']
+    list_filter = ['activa', 'fecha_creacion']
+    search_fields = ['nombre', 'descripcion']
+    ordering = ['-fecha_creacion']
+    
+    def donaciones_count(self, obj):
+        return obj.donacion_set.count()
+    donaciones_count.short_description = 'Donaciones'
+
+@admin.register(Notificacion)
+class NotificacionAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'tipo', 'titulo', 'leida', 'fecha_creacion']
+    list_filter = ['tipo', 'leida', 'fecha_creacion']
+    search_fields = ['usuario__username', 'usuario__email', 'titulo', 'mensaje']
+    ordering = ['-fecha_creacion']
+    readonly_fields = ['fecha_creacion', 'fecha_lectura']
+
+@admin.register(SeguimientoMascota)
+class SeguimientoMascotaAdmin(admin.ModelAdmin):
+    list_display = ['mascota', 'fecha_seguimiento', 'peso', 'estado_salud', 'administrador']
+    list_filter = ['fecha_seguimiento', 'administrador']
+    search_fields = ['mascota__nombre', 'estado_salud', 'observaciones']
+    ordering = ['-fecha_seguimiento']
+    readonly_fields = ['fecha_seguimiento']

@@ -1,14 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode, HistorialMascota, SeguimientoMascota, CitaPreAdopcion
-from .forms import SolicitudAdopcionForm, CustomUserCreationForm, UserUpdateForm, DonacionForm, MascotaAdminForm, ReporteMensualForm, PasswordResetEmailForm, PasswordResetCodeForm, PasswordResetNewPasswordForm
-from .decorators import admin_required
-from django.db.models import Sum, Count, Q
+from .models import Mascota, SolicitudAdopcion, Donacion, Favorito, Usuario, PasswordResetCode, HistorialMascota, CitaPreAdopcion, CategoriaDonacion, Notificacion, SeguimientoMascota
+from .forms import SolicitudAdopcionForm, CustomUserCreationForm, UserUpdateForm, DonacionForm, MascotaAdminForm, ReporteMensualForm, PasswordResetEmailForm, PasswordResetCodeForm, PasswordResetNewPasswordForm, BusquedaDonantesForm, CategoriaDonacionForm, SeguimientoMascotaForm, MascotaFormMejorado, BusquedaMascotasForm, RegistroUsuarioForm, DonacionFormMejorado, BusquedaDonacionesForm
+from .decorators import admin_email_required
+from django.db.models import Sum, Count, Q, Avg
 from django.utils import timezone
 import matplotlib.pyplot as plt
 from io import BytesIO
@@ -25,6 +25,8 @@ from calendar import month_name
 import os
 import random
 from datetime import timedelta
+from django.urls import reverse
+from django.contrib.auth.forms import AuthenticationForm
 
 def enviar_correo_bienvenida(usuario):
     """Envía un correo de bienvenida a un nuevo usuario."""
@@ -48,22 +50,17 @@ def enviar_correo_bienvenida(usuario):
 
 def registro_view(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
+        form = RegistroUsuarioForm(request.POST)
         if form.is_valid():
-            usuario = form.save(commit=False)
-            # Asignar rol de administrador si el email es del dominio correcto
-            if usuario.email.endswith('@lunaylia.com'):
-                usuario.rol = 'administrador'
-                usuario.is_staff = True # Opcional: para que pueda acceder al admin de Django
-            usuario.save()
-            
+            user = form.save()
+            # Crear notificación de bienvenida
+            crear_notificaciones_registro(user)
             # Enviar correo de bienvenida
-            enviar_correo_bienvenida(usuario)
-            
-            messages.success(request, '¡Registro exitoso! Ahora puedes iniciar sesión con tus credenciales.')
+            enviar_correo_bienvenida(user)
+            messages.success(request, '¡Registro exitoso! Te hemos enviado un correo de bienvenida.')
             return redirect('login')
     else:
-        form = CustomUserCreationForm()
+        form = RegistroUsuarioForm()
     return render(request, 'registration/registro.html', {'form': form})
 
 # Create your views here.
@@ -108,10 +105,19 @@ def quienes_somos_view(request):
 
 @login_required
 def solicitar_adopcion(request, mascota_id):
-    mascota = get_object_or_404(Mascota, id=mascota_id, estado_adopcion='disponible')
+    try:
+        mascota = Mascota.objects.get(id=mascota_id, estado_adopcion='disponible')
+    except Mascota.DoesNotExist:
+        messages.error(request, 'La mascota no está disponible para adopción o no existe.')
+        return redirect('lista_mascotas')
     
     # Verificar si ya tiene una solicitud pendiente para esta mascota
     if SolicitudAdopcion.objects.filter(usuario=request.user, mascota=mascota, estado_solicitud='pendiente').exists():
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'mensaje': f'Ya tienes una solicitud pendiente para {mascota.nombre}.'
+            })
         messages.warning(request, f'Ya tienes una solicitud pendiente para {mascota.nombre}.')
         return redirect('mascota_detalle', mascota_id=mascota.id)
     
@@ -122,10 +128,11 @@ def solicitar_adopcion(request, mascota_id):
             solicitud.usuario = request.user
             solicitud.mascota = mascota
             solicitud.save()
-            
-            # Cambiar estado de la mascota a 'en_proceso'
             mascota.estado_adopcion = 'en_proceso'
             mascota.save()
+            # Notificación al usuario y admin
+            crear_notificaciones_solicitud(solicitud, 'creada')
+            crear_notificaciones_mascota(mascota, 'estado_cambiado')
 
             # Enviar notificación por email al usuario
             try:
@@ -139,8 +146,23 @@ def solicitar_adopcion(request, mascota_id):
             except Exception as e:
                 print(f"Error enviando email a admin: {e}")
 
+            # Verificar si es una petición AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'mensaje': f'¡Tu solicitud para adoptar a {mascota.nombre} ha sido enviada con éxito! Nos pondremos en contacto contigo pronto.',
+                    'redirect': reverse('perfil')
+                })
+
             messages.success(request, f'¡Tu solicitud para adoptar a {mascota.nombre} ha sido enviada con éxito! Nos pondremos en contacto contigo pronto.')
             return redirect('perfil')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': 'Por favor corrige los errores en el formulario.',
+                    'errors': form.errors
+                })
     else:
         form = SolicitudAdopcionForm()
         
@@ -185,7 +207,7 @@ def enviar_correo_admin_nueva_solicitud(solicitud):
             fail_silently=False
         )
 
-@admin_required
+@admin_email_required
 def admin_dashboard(request):
     # Estadísticas generales
     total_mascotas = Mascota.objects.count()
@@ -194,7 +216,6 @@ def admin_dashboard(request):
     mascotas_adoptadas = Mascota.objects.filter(estado_adopcion='adoptado').count()
     mascotas_en_tratamiento = Mascota.objects.filter(estado_adopcion='en_tratamiento').count()
     
-    # Contador de peludos en la fundación
     peludos_en_fundacion = Mascota.contar_peludos_en_fundacion()
     peludos_adoptados = Mascota.contar_peludos_adoptados()
     
@@ -205,29 +226,29 @@ def admin_dashboard(request):
     total_usuarios = Usuario.objects.count()
     total_donado = Donacion.objects.filter(tipo_donacion='monetaria').aggregate(total=Sum('monto'))['total'] or 0
     
-    # Datos para gráficas de pastel
-    # Gráfica de estado de mascotas
     mascotas_data = {
         'Disponibles': mascotas_disponibles,
         'En Proceso': mascotas_en_proceso,
         'Adoptadas': mascotas_adoptadas,
         'En Tratamiento': mascotas_en_tratamiento
     }
-    
-    # Gráfica de solicitudes de adopción
     solicitudes_data = {
         'Pendientes': solicitudes_pendientes,
         'Aprobadas': solicitudes_aprobadas,
         'Rechazadas': solicitudes_rechazadas
     }
     
-    # Gráfica de donaciones por categoría
+    # Obtener instancias de categorías por nombre
+    alimentos = CategoriaDonacion.objects.filter(nombre__iexact='alimentos').first()
+    medicamentos = CategoriaDonacion.objects.filter(nombre__iexact='medicamentos').first()
+    juguetes = CategoriaDonacion.objects.filter(nombre__iexact='juguetes').first()
+    
     donaciones_monetarias = Donacion.objects.filter(tipo_donacion='monetaria').count()
-    donaciones_alimentos = Donacion.objects.filter(tipo_donacion='insumos', categoria_insumo='alimentos').count()
-    donaciones_medicamentos = Donacion.objects.filter(tipo_donacion='insumos', categoria_insumo='medicamentos').count()
-    donaciones_juguetes = Donacion.objects.filter(tipo_donacion='insumos', categoria_insumo='juguetes').count()
+    donaciones_alimentos = Donacion.objects.filter(tipo_donacion='insumos', categoria_insumo=alimentos).count() if alimentos else 0
+    donaciones_medicamentos = Donacion.objects.filter(tipo_donacion='insumos', categoria_insumo=medicamentos).count() if medicamentos else 0
+    donaciones_juguetes = Donacion.objects.filter(tipo_donacion='insumos', categoria_insumo=juguetes).count() if juguetes else 0
     donaciones_otros = Donacion.objects.filter(tipo_donacion='insumos').exclude(
-        categoria_insumo__in=['alimentos', 'medicamentos', 'juguetes']
+        categoria_insumo__in=[c for c in [alimentos, medicamentos, juguetes] if c]
     ).count()
     
     donaciones_data = {
@@ -238,7 +259,6 @@ def admin_dashboard(request):
         'Otros': donaciones_otros
     }
     
-    # Últimas actividades (tiempo real)
     ultimas_mascotas = Mascota.objects.order_by('-fecha_ingreso')[:5]
     ultimas_donaciones = Donacion.objects.order_by('-fecha_donacion')[:5]
     ultimas_solicitudes = SolicitudAdopcion.objects.order_by('-fecha_solicitud')[:5]
@@ -268,7 +288,7 @@ def admin_dashboard(request):
     }
     return render(request, 'adopcion/admin_dashboard.html', context)
 
-@admin_required
+@admin_email_required
 def lista_solicitudes(request):
     solicitudes = SolicitudAdopcion.objects.select_related('usuario', 'mascota').order_by('-fecha_solicitud')
     context = {
@@ -276,7 +296,7 @@ def lista_solicitudes(request):
     }
     return render(request, 'adopcion/lista_solicitudes.html', context)
 
-@admin_required
+@admin_email_required
 def detalle_solicitud(request, solicitud_id):
     solicitud = get_object_or_404(SolicitudAdopcion, id=solicitud_id)
     context = {
@@ -299,65 +319,41 @@ def enviar_correo_estado_solicitud(solicitud):
         fail_silently=False
     )
 
-@admin_required
+@admin_email_required
 def actualizar_estado_solicitud(request, solicitud_id, nuevo_estado):
-    if request.method == 'POST':
-        solicitud = get_object_or_404(SolicitudAdopcion, id=solicitud_id)
-        if nuevo_estado in ['aprobada', 'rechazada']:
-            solicitud.estado_solicitud = nuevo_estado
-            solicitud.fecha_respuesta = timezone.now()
-            solicitud.id_admin_revisor = request.user
-            solicitud.save()
-            
-            # Si se aprueba, crear cita de pre-adopción
-            if nuevo_estado == 'aprobada':
-                # Programar cita para 3 días después a las 2:00 PM
-                fecha_cita = timezone.now() + timedelta(days=3)
-                fecha_cita = fecha_cita.replace(hour=14, minute=0, second=0, microsecond=0)
-                
-                # Crear la cita de pre-adopción
-                cita = CitaPreAdopcion.objects.create(
-                    solicitud=solicitud,
-                    fecha_cita=fecha_cita,
-                    duracion_minutos=30,
-                    lugar="Fundación Luna & Lía"
-                )
-                
-                # Enviar email con la cita
-                try:
-                    asunto = f"¡Cita programada para conocer a {solicitud.mascota.nombre}!"
-                    mensaje_html = render_to_string('emails/cita_pre_adopcion.html', {'cita': cita})
-                    mensaje_txt = render_to_string('emails/cita_pre_adopcion.txt', {'cita': cita})
-                    
-                    send_mail(
-                        asunto,
-                        mensaje_txt,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [solicitud.usuario.email],
-                        html_message=mensaje_html
-                    )
-                    
-                    messages.success(request, f"Solicitud aprobada. Se ha programado una cita para {solicitud.usuario.username} y se envió el email de confirmación.")
-                except Exception as e:
-                    messages.warning(request, f"Solicitud aprobada y cita creada, pero hubo un error enviando el email: {e}")
-            
-            # Enviar email de notificación del estado
-            try:
-                enviar_correo_estado_solicitud(solicitud)
-            except Exception as e:
-                messages.warning(request, f"Hubo un error enviando el email de notificación: {e}")
-        else:
-            messages.error(request, "Estado no válido.")
-        return redirect('detalle_solicitud', solicitud_id=solicitud.id)
-    return redirect('inicio')
+    solicitud = get_object_or_404(SolicitudAdopcion, id=solicitud_id)
+    estado_anterior = solicitud.estado_solicitud
+    solicitud.estado_solicitud = nuevo_estado
+    solicitud.save()
+    
+    # Crear notificaciones según el nuevo estado
+    if nuevo_estado == 'aprobada':
+        crear_notificaciones_solicitud(solicitud, 'aprobada')
+    elif nuevo_estado == 'rechazada':
+        crear_notificaciones_solicitud(solicitud, 'rechazada')
+    elif nuevo_estado == 'completada':
+        crear_notificaciones_solicitud(solicitud, 'completada')
+        # Cambiar estado de la mascota a adoptado
+        solicitud.mascota.estado_adopcion = 'adoptado'
+        solicitud.mascota.save()
+        crear_notificaciones_mascota(solicitud.mascota, 'estado_cambiado')
+    
+    # Enviar correo de notificación
+    try:
+        enviar_correo_estado_solicitud(solicitud)
+    except Exception as e:
+        print(f"Error enviando email: {e}")
+    
+    messages.success(request, f'Estado de la solicitud actualizado a: {solicitud.get_estado_solicitud_display()}')
+    return redirect('detalle_solicitud', solicitud_id=solicitud_id)
 
-@admin_required
+@admin_email_required
 def pagina_reportes(request):
     """Muestra la página con los enlaces para generar los diferentes reportes PDF."""
     form = ReporteMensualForm()
     return render(request, 'adopcion/reportes.html', {'form': form})
 
-@admin_required
+@admin_email_required
 def generar_mascotas_pdf(request):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
@@ -432,7 +428,7 @@ def generar_mascotas_pdf(request):
     buffer.seek(0)
     return HttpResponse(buffer, content_type='application/pdf')
 
-@admin_required
+@admin_email_required
 def generar_donaciones_pdf(request):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=inch/2, leftMargin=inch/2, topMargin=inch/2, bottomMargin=inch/2)
@@ -574,14 +570,10 @@ def perfil_view(request):
     # Obtenemos las donaciones del usuario
     donaciones = Donacion.objects.filter(usuario=request.user).order_by('-fecha_donacion')
 
-    # Obtenemos los seguimientos del usuario
-    seguimientos = SeguimientoMascota.objects.filter(adoptante=request.user).order_by('proxima_cita')
-
     context = {
         'form': form,
         'solicitudes': solicitudes,
-        'donaciones': donaciones,
-        'seguimientos': seguimientos
+        'donaciones': donaciones
     }
     return render(request, 'adopcion/perfil.html', context)
 
@@ -612,91 +604,88 @@ def mascota_detalle(request, mascota_id):
 
 def realizar_donacion(request):
     if request.method == 'POST':
-        form = DonacionForm(request.POST)
+        form = DonacionForm(request.POST, request.FILES, user=request.user if request.user.is_authenticated else None)
         if form.is_valid():
             donacion = form.save(commit=False)
             if request.user.is_authenticated:
                 donacion.usuario = request.user
             donacion.save()
             
+            # Crear notificaciones automáticas
+            crear_notificaciones_donacion(donacion)
+            
+            # Enviar correo de agradecimiento
             enviar_correo_donacion(donacion)
+            
+            # Verificar si es una petición AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'mensaje': '¡Muchas gracias! Tu donación ha sido registrada. Hemos enviado un comprobante a tu correo.',
+                    'redirect': reverse('inicio')
+                })
             
             messages.success(request, '¡Muchas gracias! Tu donación ha sido registrada. Hemos enviado un comprobante a tu correo.')
             return redirect('inicio')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': 'Por favor corrige los errores en el formulario.',
+                    'errors': form.errors
+                })
     else:
-        form = DonacionForm()
+        form = DonacionForm(user=request.user if request.user.is_authenticated else None)
 
-    return render(request, 'adopcion/donacion_form.html', {'form': form})
+    return render(request, 'adopcion/donacion_form_mejorado.html', {'form': form})
 
 # Vistas para el sistema de favoritos
 @login_required
 @require_POST
 def agregar_favorito(request, mascota_id):
-    """Agrega una mascota a los favoritos del usuario."""
     mascota = get_object_or_404(Mascota, id=mascota_id)
     favorito, created = Favorito.objects.get_or_create(
         usuario=request.user,
         mascota=mascota
     )
-    
-    if created:
-        return JsonResponse({'status': 'ok', 'message': f'{mascota.nombre} añadido a tus favoritos.'})
-    else:
-        return JsonResponse({'status': 'exist', 'message': f'{mascota.nombre} ya estaba en tus favoritos.'})
+    return JsonResponse({
+        'success': True,
+        'is_favorite': True,
+        'message': f'{mascota.nombre} añadido a tus favoritos.' if created else f'{mascota.nombre} ya estaba en tus favoritos.'
+    })
 
 @login_required
 @require_POST
 def quitar_favorito(request, mascota_id):
-    """Quita una mascota de los favoritos del usuario."""
     mascota = get_object_or_404(Mascota, id=mascota_id)
     try:
         favorito = Favorito.objects.get(usuario=request.user, mascota=mascota)
         favorito.delete()
-        return JsonResponse({'status': 'ok', 'message': f'{mascota.nombre} ha sido removido de tus favoritos.'})
+        return JsonResponse({'success': True, 'is_favorite': False, 'message': f'{mascota.nombre} ha sido removido de tus favoritos.'})
     except Favorito.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Favorito no encontrado.'})
+        return JsonResponse({'success': False, 'is_favorite': False, 'message': 'Favorito no encontrado.'})
 
 @login_required
 def mis_favoritos(request):
-    """Muestra la lista de mascotas favoritas del usuario con filtros."""
-    # Obtener parámetros de filtro
-    tipo_filter = request.GET.get('tipo', '')
-    edad_filter = request.GET.get('edad', '')
-    estado_filter = request.GET.get('estado', '')
-    
-    # Obtener favoritos del usuario
-    favoritos = Favorito.objects.filter(usuario=request.user).select_related('mascota')
-    mascotas_favoritas = [favorito.mascota for favorito in favoritos]
-    
-    # Aplicar filtros
-    if tipo_filter:
-        mascotas_favoritas = [m for m in mascotas_favoritas if m.tipo == tipo_filter]
-    
-    if edad_filter:
-        if edad_filter == '2-12':
-            mascotas_favoritas = [m for m in mascotas_favoritas if 2 <= m.edad_aproximada <= 12]
-        elif edad_filter == '1-2':
-            mascotas_favoritas = [m for m in mascotas_favoritas if 12 <= m.edad_aproximada <= 24]
-        elif edad_filter == '2-4':
-            mascotas_favoritas = [m for m in mascotas_favoritas if 24 <= m.edad_aproximada <= 48]
-        elif edad_filter == '5+':
-            mascotas_favoritas = [m for m in mascotas_favoritas if m.edad_aproximada >= 60]
-    
-    if estado_filter:
-        mascotas_favoritas = [m for m in mascotas_favoritas if m.estado_adopcion == estado_filter]
-    
-    context = {
-        'mascotas': mascotas_favoritas,
-        'es_pagina_favoritos': True,
-        'filtros_activos': {
-            'tipo': tipo_filter,
-            'edad': edad_filter,
-            'estado': estado_filter
-        }
-    }
-    return render(request, 'adopcion/mis_favoritos.html', context)
+    """Vista para mostrar las mascotas favoritas del usuario"""
+    mascotas = Mascota.objects.filter(seguidores__usuario=request.user).order_by('-fecha_ingreso')
+    tipo = request.GET.get('tipo', '')
+    edad = request.GET.get('edad', '')
+    if tipo:
+        mascotas = mascotas.filter(tipo=tipo)
+    if edad:
+        if edad == '2-12':
+            mascotas = mascotas.filter(edad_aproximada_meses__gte=2, edad_aproximada_meses__lte=12)
+        elif edad == '13-24':
+            mascotas = mascotas.filter(edad_aproximada_meses__gte=13, edad_aproximada_meses__lte=24)
+        elif edad == '25-48':
+            mascotas = mascotas.filter(edad_aproximada_meses__gte=25, edad_aproximada_meses__lte=48)
+        elif edad == '49+':
+            mascotas = mascotas.filter(edad_aproximada_meses__gte=49)
+    filtros_activos = {'tipo': tipo, 'edad': edad}
+    return render(request, 'adopcion/mis_favoritos.html', {'mascotas': mascotas, 'filtros_activos': filtros_activos})
 
-@admin_required
+@admin_email_required
 def probar_correo_bienvenida(request):
     """
     Vista para que un admin pueda enviarse a sí mismo un correo de bienvenida de prueba.
@@ -726,7 +715,7 @@ def enviar_correo_masivo(asunto, mensaje_html, mensaje_texto, destinatarios):
     except Exception as e:
         return False, f"Error enviando correos: {str(e)}"
 
-@admin_required
+@admin_email_required
 def enviar_correo_masivo_view(request):
     """Vista para enviar correos masivos"""
     if request.method == 'POST':
@@ -779,7 +768,7 @@ def enviar_correo_masivo_view(request):
     
     return render(request, 'adopcion/enviar_correo_masivo.html')
 
-@admin_required
+@admin_email_required
 def generar_solicitudes_pdf(request):
     response = HttpResponse(content_type='application/pdf')
     
@@ -893,7 +882,7 @@ def generar_solicitudes_pdf(request):
     response.write(pdf)
     return response
 
-@admin_required
+@admin_email_required
 def generar_actividad_pdf(request):
     """Genera un reporte de actividad reciente con timestamps."""
     buffer = BytesIO()
@@ -1066,7 +1055,7 @@ def generar_mi_reporte_donaciones(request):
     buffer.seek(0)
     return HttpResponse(buffer, content_type='application/pdf')
 
-@admin_required
+@admin_email_required
 def agregar_mascota(request):
     """Vista para que el administrador añada mascotas con imágenes adaptadas"""
     if request.method == 'POST':
@@ -1095,7 +1084,7 @@ def agregar_mascota(request):
     }
     return render(request, 'adopcion/agregar_mascota.html', context)
 
-@admin_required
+@admin_email_required
 def editar_mascota(request, mascota_id):
     mascota = get_object_or_404(Mascota, id=mascota_id)
     if request.method == 'POST':
@@ -1121,114 +1110,117 @@ def editar_mascota(request, mascota_id):
     })
 
 def lista_mascotas(request):
-    mascotas_list = Mascota.objects.all().order_by('-fecha_ingreso')
+    """Vista para listar todas las mascotas disponibles con filtros"""
+    mascotas_list = Mascota.objects.filter(estado_adopcion='disponible').order_by('-fecha_ingreso')
     
-    # Obtener valores únicos para los filtros desde la base de datos
-    tipos = Mascota.objects.values_list('tipo', flat=True).distinct()
-    sexos = Mascota.objects.values_list('sexo', flat=True).distinct()
-    tamaños = Mascota.objects.values_list('tamaño', flat=True).distinct()
+    # Filtros
+    tipo_filter = request.GET.get('tipo', '')
+    edad_min_filter = request.GET.get('edad_min', '')
+    edad_max_filter = request.GET.get('edad_max', '')
+    sexo_filter = request.GET.get('sexo', '')
+    tamaño_filter = request.GET.get('tamaño', '')
+    q_filter = request.GET.get('q', '')
     
-    # Filtrado
-    query = request.GET.get('q')
-    tipo_filter = request.GET.get('tipo')
-    sexo_filter = request.GET.get('sexo')
-    tamaño_filter = request.GET.get('tamaño')
-    estado_filter = request.GET.get('estado_adopcion')
-    edad_min_filter = request.GET.get('edad_min')
-    edad_max_filter = request.GET.get('edad_max')
-
-    if query:
-        mascotas_list = mascotas_list.filter(
-            Q(nombre__icontains=query) |
-            Q(raza__icontains=query) |
-            Q(descripcion__icontains=query) |
-            Q(personalidad__icontains=query)
-        )
+    # Aplicar filtros
     if tipo_filter:
         mascotas_list = mascotas_list.filter(tipo=tipo_filter)
+    if edad_min_filter:
+        mascotas_list = mascotas_list.filter(edad_aproximada_meses__gte=edad_min_filter)
+    if edad_max_filter:
+        mascotas_list = mascotas_list.filter(edad_aproximada_meses__lte=edad_max_filter)
     if sexo_filter:
         mascotas_list = mascotas_list.filter(sexo=sexo_filter)
     if tamaño_filter:
         mascotas_list = mascotas_list.filter(tamaño=tamaño_filter)
-    if estado_filter:
-        mascotas_list = mascotas_list.filter(estado_adopcion=estado_filter)
-    if edad_min_filter:
-        mascotas_list = mascotas_list.filter(edad_aproximada__gte=edad_min_filter)
-    if edad_max_filter:
-        mascotas_list = mascotas_list.filter(edad_aproximada__lte=edad_max_filter)
-
+    if q_filter:
+        mascotas_list = mascotas_list.filter(
+            Q(nombre__icontains=q_filter) |
+            Q(raza__icontains=q_filter) |
+            Q(descripcion__icontains=q_filter) |
+            Q(personalidad__icontains=q_filter) |
+            Q(color__icontains=q_filter)
+        )
+    # Carrusel: hasta 6 mascotas reales, disponibles y con imagen principal válida
+    mascotas_carousel = Mascota.objects.filter(estado_adopcion='disponible').exclude(imagen_principal='').exclude(imagen_principal__isnull=True).order_by('-fecha_ingreso')[:6]
+    # Estadísticas
+    total_mascotas = mascotas_list.count()
+    perros = mascotas_list.filter(tipo='perro').count()
+    gatos = mascotas_list.filter(tipo='gato').count()
+    disponibles = mascotas_list.filter(estado_adopcion='disponible').count()
     # Paginación
-    paginator = Paginator(mascotas_list, 12)  # 12 mascotas por página
+    paginator = Paginator(mascotas_list, 12)
     page = request.GET.get('page')
     try:
         mascotas = paginator.page(page)
-    except PageNotAnInteger:
+    except (PageNotAnInteger, EmptyPage):
         mascotas = paginator.page(1)
-    except EmptyPage:
-        mascotas = paginator.page(paginator.num_pages)
-        
-    total_results = mascotas_list.count()
-    
-    # Si la petición es AJAX, devolver solo el fragmento de la lista
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return render(request, 'adopcion/_lista_mascotas_parcial.html', {
-            'mascotas': mascotas,
-            'total_results': total_results
-        })
-
-    # Para la carga inicial de la página
-    mascotas_carousel = Mascota.objects.filter(
-        estado_adopcion='disponible', 
-        imagen_principal__isnull=False
-    ).exclude(imagen_principal='').order_by('?')[:5]
-
+    # Choices para los filtros
+    tipos = Mascota.TIPO_CHOICES
+    sexos = Mascota.SEXO_CHOICES
+    tamaños = Mascota.TAMAÑO_CHOICES
     context = {
         'mascotas': mascotas,
-        'total_results': total_results,
-        'tipos': Mascota.TIPO_CHOICES,
-        'sexos': Mascota.SEXO_CHOICES,
-        'tamaños': Mascota.TAMAÑO_CHOICES,
-        'estados': Mascota.ESTADO_ADOPCION_CHOICES,
         'mascotas_carousel': mascotas_carousel,
-        'page_obj': mascotas, # Para la paginación
-        'is_paginated': mascotas.has_other_pages(),
-        'filtros_actuales': request.GET, # Pasa todos los filtros GET a la plantilla
+        'total_mascotas': total_mascotas,
+        'perros': perros,
+        'gatos': gatos,
+        'disponibles': disponibles,
+        'tipos': tipos,
+        'sexos': sexos,
+        'tamaños': tamaños,
+        'filtros_actuales': {
+            'tipo': tipo_filter,
+            'edad_min': edad_min_filter,
+            'edad_max': edad_max_filter,
+            'sexo': sexo_filter,
+            'tamaño': tamaño_filter,
+            'q': q_filter,
+        },
+        'filtros_aplicados': any([
+            tipo_filter, edad_min_filter, edad_max_filter, sexo_filter, tamaño_filter, q_filter
+        ]),
+        'total_results': total_mascotas,
+        'total_original': Mascota.objects.count(),
     }
-    
     return render(request, 'adopcion/lista_mascotas.html', context)
 
-@admin_required
+@admin_email_required
 @require_http_methods(["GET", "POST"])
 def admin_editar_mascotas(request):
-    from .models import Mascota
-    if request.method == "POST":
-        for key, value in request.POST.items():
-            if key.startswith("nombre_"):
-                mascota_id = key.split("_")[1]
-                try:
-                    mascota = Mascota.objects.get(id=mascota_id)
-                    estado_anterior = mascota.estado_adopcion
-                    mascota.nombre = value
-                    edad = int(request.POST.get(f"edad_{mascota_id}"))
-                    peso = float(request.POST.get(f"peso_{mascota_id}"))
-                    if edad < 0 or peso < 0:
-                        continue  # No permitir valores negativos
-                    mascota.edad_aproximada = edad
-                    mascota.estado_adopcion = request.POST.get(f"estado_{mascota_id}")
-                    mascota.peso = peso
-                    mascota.tipo = request.POST.get(f"tipo_{mascota_id}")
-                    mascota.save()
-                    nuevo_estado = mascota.estado_adopcion
-                    if estado_anterior != nuevo_estado:
-                        HistorialMascota.objects.create(
-                            mascota=mascota,
-                            estado_anterior=estado_anterior,
-                            estado_nuevo=nuevo_estado,
-                            usuario=request.user
-                        )
-                except Mascota.DoesNotExist:
-                    continue
+    """Vista para que el administrador edite múltiples mascotas a la vez"""
+    if request.method == 'POST':
+        mascotas = Mascota.objects.all()
+        for mascota in mascotas:
+            # Obtener los datos del formulario para cada mascota
+            nombre = request.POST.get(f'nombre_{mascota.id}')
+            tipo = request.POST.get(f'tipo_{mascota.id}')
+            raza = request.POST.get(f'raza_{mascota.id}')
+            edad = request.POST.get(f'edad_{mascota.id}')
+            sexo = request.POST.get(f'sexo_{mascota.id}')
+            tamaño = request.POST.get(f'tamaño_{mascota.id}')
+            estado = request.POST.get(f'estado_{mascota.id}')
+            
+            # Actualizar solo si hay cambios
+            if nombre and nombre != mascota.nombre:
+                mascota.nombre = nombre
+            if tipo and tipo != mascota.tipo:
+                mascota.tipo = tipo
+            if raza and raza != mascota.raza:
+                mascota.raza = raza
+            if edad and int(edad) != mascota.edad_aproximada_meses:
+                mascota.edad_aproximada_meses = int(edad)
+            if sexo and sexo != mascota.sexo:
+                mascota.sexo = sexo
+            if tamaño and tamaño != mascota.tamaño:
+                mascota.tamaño = tamaño
+            if estado and estado != mascota.estado_adopcion:
+                mascota.estado_adopcion = estado
+            
+            mascota.save()
+        
+        messages.success(request, 'Mascotas actualizadas exitosamente.')
         return redirect('admin_editar_mascotas')
+    
     mascotas = Mascota.objects.all().order_by('-fecha_ingreso')
     return render(request, 'adopcion/editar_mascotas_admin.html', {'mascotas': mascotas})
 
@@ -1312,107 +1304,1024 @@ def recuperar_password_nueva(request):
         form = PasswordResetNewPasswordForm()
     return render(request, 'registration/otp_password_reset_new.html', {'form': form})
 
-@admin_required
-def admin_seguimiento_mascotas(request):
-    seguimientos = SeguimientoMascota.objects.select_related('mascota', 'adoptante').order_by('proxima_cita', 'completada')
-    historial = HistorialMascota.objects.all().order_by('-fecha_cambio')[:20]  # Últimos 20 cambios
-    context = {
-        'seguimientos': seguimientos,
-        'historial': historial
-    }
-    return render(request, 'adopcion/seguimiento_mascotas_admin.html', context)
-
-@admin_required
-def aprobar_seguimiento(request, seguimiento_id):
-    if request.method == 'POST':
-        seguimiento = get_object_or_404(SeguimientoMascota, id=seguimiento_id)
-        seguimiento.completada = True
-        seguimiento.fecha_completada = timezone.now()
-        seguimiento.observaciones = "Cita aprobada - Seguimiento exitoso"
-        seguimiento.save()
-        
-        # Si es la cita 3, no crear más citas
-        if seguimiento.numero_cita < 3:
-            # Crear la siguiente cita
-            SeguimientoMascota.objects.create(
-                mascota=seguimiento.mascota,
-                adoptante=seguimiento.adoptante,
-                proxima_cita=timezone.now().date() + timedelta(days=60),
-                numero_cita=seguimiento.numero_cita + 1
+@admin_email_required
+def busqueda_donantes(request):
+    """Vista para búsqueda múltiple de donantes con estadísticas mejoradas"""
+    form = BusquedaDonantesForm(request.GET or None)
+    donaciones = Donacion.objects.all()
+    
+    # Variables para estadísticas
+    total_original = donaciones.count()
+    filtros_aplicados = False
+    
+    if form.is_valid():
+        # Aplicar filtros
+        if form.cleaned_data.get('nombre'):
+            donaciones = donaciones.filter(
+                Q(nombre_donante__icontains=form.cleaned_data['nombre']) |
+                Q(apellido_donante__icontains=form.cleaned_data['nombre'])
             )
-            messages.success(request, f"Cita {seguimiento.numero_cita} aprobada. Se ha programado la cita {seguimiento.numero_cita + 1}.")
-        else:
-            messages.success(request, f"Cita {seguimiento.numero_cita} aprobada. Proceso de seguimiento completado.")
-        
-        return redirect('admin_seguimiento_mascotas')
-    return redirect('admin_seguimiento_mascotas')
+            filtros_aplicados = True
+        if form.cleaned_data.get('apellido'):
+            donaciones = donaciones.filter(apellido_donante__icontains=form.cleaned_data['apellido'])
+            filtros_aplicados = True
+        if form.cleaned_data.get('email'):
+            donaciones = donaciones.filter(email_donante__icontains=form.cleaned_data['email'])
+            filtros_aplicados = True
+        if form.cleaned_data.get('tipo_donacion'):
+            donaciones = donaciones.filter(tipo_donacion=form.cleaned_data['tipo_donacion'])
+            filtros_aplicados = True
+        if form.cleaned_data.get('categoria'):
+            donaciones = donaciones.filter(categoria_insumo=form.cleaned_data['categoria'])
+            filtros_aplicados = True
+        if form.cleaned_data.get('fecha_desde'):
+            donaciones = donaciones.filter(fecha_donacion__date__gte=form.cleaned_data['fecha_desde'])
+            filtros_aplicados = True
+        if form.cleaned_data.get('fecha_hasta'):
+            donaciones = donaciones.filter(fecha_donacion__date__lte=form.cleaned_data['fecha_hasta'])
+            filtros_aplicados = True
+    
+    # Estadísticas mejoradas
+    total_donaciones = donaciones.count()
+    total_monetario = donaciones.filter(tipo_donacion='monetaria').aggregate(total=Sum('monto'))['total'] or 0
+    total_insumos = donaciones.filter(tipo_donacion='insumos').count()
+    total_servicios = donaciones.filter(tipo_donacion='servicios').count()
+    total_especie = donaciones.filter(tipo_donacion='especie').count()
+    
+    # Contar donantes únicos
+    donantes_unicos = donaciones.values('email_donante').distinct().count()
+    
+    # Estadísticas por tipo de donación
+    estadisticas_por_tipo = {}
+    for tipo_choice in Donacion.TIPO_DONACION_CHOICES:
+        count = donaciones.filter(tipo_donacion=tipo_choice[0]).count()
+        if count > 0:
+            estadisticas_por_tipo[tipo_choice[1]] = count
+    
+    # Estadísticas por estado de donación
+    estadisticas_por_estado = {}
+    for estado_choice in Donacion.objects.values_list('estado_donacion', flat=True).distinct():
+        count = donaciones.filter(estado_donacion=estado_choice).count()
+        if count > 0:
+            estadisticas_por_estado[estado_choice] = count
+    
+    # Estadísticas por frecuencia
+    estadisticas_por_frecuencia = {}
+    for frecuencia_choice in Donacion.FRECUENCIA_CHOICES:
+        count = donaciones.filter(frecuencia=frecuencia_choice[0]).count()
+        if count > 0:
+            estadisticas_por_frecuencia[frecuencia_choice[1]] = count
+    
+    # Estadísticas por categoría (solo para insumos)
+    estadisticas_categoria = {}
+    if form.is_valid() and form.cleaned_data.get('tipo_donacion') == 'insumos':
+        categorias = CategoriaDonacion.objects.filter(activa=True)
+        for categoria in categorias:
+            count = donaciones.filter(categoria_insumo=categoria).count()
+            if count > 0:
+                estadisticas_categoria[categoria.nombre] = count
+    
+    # Top 5 donantes más generosos (por monto total)
+    top_donantes = donaciones.filter(tipo_donacion='monetaria').values(
+        'nombre_donante', 'apellido_donante', 'email_donante'
+    ).annotate(
+        total_donado=Sum('monto'),
+        num_donaciones=Count('id')
+    ).order_by('-total_donado')[:5]
+    
+    # Paginación
+    paginator = Paginator(donaciones.order_by('-fecha_donacion'), 20)
+    page = request.GET.get('page')
+    try:
+        donaciones_paginadas = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        donaciones_paginadas = paginator.page(1)
+    
+    context = {
+        'form': form,
+        'donaciones': donaciones_paginadas,
+        'total_donaciones': total_donaciones,
+        'total_original': total_original,
+        'total_monetario': total_monetario,
+        'total_insumos': total_insumos,
+        'total_servicios': total_servicios,
+        'total_especie': total_especie,
+        'donantes_unicos': donantes_unicos,
+        'filtros_aplicados': filtros_aplicados,
+        'estadisticas_por_tipo': estadisticas_por_tipo,
+        'estadisticas_por_estado': estadisticas_por_estado,
+        'estadisticas_por_frecuencia': estadisticas_por_frecuencia,
+        'estadisticas_categoria': estadisticas_categoria,
+        'top_donantes': top_donantes,
+    }
+    return render(request, 'adopcion/busqueda_donantes.html', context)
 
-@admin_required
-def denegar_seguimiento(request, seguimiento_id):
+@admin_email_required
+def gestionar_categorias(request):
+    """Vista para gestionar categorías de donaciones"""
     if request.method == 'POST':
-        seguimiento = get_object_or_404(SeguimientoMascota, id=seguimiento_id)
-        seguimiento.completada = True
-        seguimiento.fecha_completada = timezone.now()
-        seguimiento.observaciones = "Cita denegada - Problemas en el seguimiento"
-        seguimiento.save()
-        
-        # Cambiar estado de la mascota a disponible
-        mascota = seguimiento.mascota
-        estado_anterior = mascota.estado_adopcion
-        mascota.estado_adopcion = 'disponible'
-        mascota.fecha_adopcion = None
-        mascota.save()
-        
-        # Registrar en el historial
-        HistorialMascota.objects.create(
+        form = CategoriaDonacionForm(request.POST)
+        if form.is_valid():
+            categoria = form.save()
+            messages.success(request, f'Categoría "{categoria.nombre}" creada exitosamente.')
+            return redirect('gestionar_categorias')
+    else:
+        form = CategoriaDonacionForm()
+    
+    categorias = CategoriaDonacion.objects.all().order_by('nombre')
+    
+    context = {
+        'form': form,
+        'categorias': categorias,
+    }
+    return render(request, 'adopcion/gestionar_categorias.html', context)
+
+@admin_email_required
+def editar_categoria(request, categoria_id):
+    """Vista para editar una categoría"""
+    categoria = get_object_or_404(CategoriaDonacion, id=categoria_id)
+    
+    if request.method == 'POST':
+        form = CategoriaDonacionForm(request.POST, instance=categoria)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoría actualizada exitosamente.')
+            return redirect('gestionar_categorias')
+    else:
+        form = CategoriaDonacionForm(instance=categoria)
+    
+    context = {
+        'form': form,
+        'categoria': categoria,
+    }
+    return render(request, 'adopcion/editar_categoria.html', context)
+
+@admin_email_required
+def eliminar_categoria(request, categoria_id):
+    """Vista para eliminar una categoría"""
+    categoria = get_object_or_404(CategoriaDonacion, id=categoria_id)
+    
+    if request.method == 'POST':
+        # Verificar si hay donaciones usando esta categoría
+        donaciones_count = Donacion.objects.filter(categoria_insumo=categoria).count()
+        if donaciones_count > 0:
+            messages.error(request, f'No se puede eliminar la categoría porque hay {donaciones_count} donaciones asociadas.')
+        else:
+            categoria.delete()
+            messages.success(request, 'Categoría eliminada exitosamente.')
+        return redirect('gestionar_categorias')
+    
+    context = {
+        'categoria': categoria,
+        'donaciones_count': Donacion.objects.filter(categoria_insumo=categoria).count(),
+    }
+    return render(request, 'adopcion/eliminar_categoria.html', context)
+
+@login_required
+def notificaciones(request):
+    """Vista para mostrar notificaciones del usuario con filtros"""
+    notificaciones_list = Notificacion.objects.filter(usuario=request.user)
+    
+    # Filtros
+    tipo_filter = request.GET.get('tipo', '')
+    estado_filter = request.GET.get('estado', '')
+    
+    if tipo_filter:
+        notificaciones_list = notificaciones_list.filter(tipo=tipo_filter)
+    
+    if estado_filter == 'no_leidas':
+        notificaciones_list = notificaciones_list.filter(leida=False)
+    elif estado_filter == 'leidas':
+        notificaciones_list = notificaciones_list.filter(leida=True)
+    
+    # Ordenar por fecha de creación (más recientes primero)
+    notificaciones_list = notificaciones_list.order_by('-fecha_creacion')
+    
+    # Marcar como leídas las notificaciones no leídas si no hay filtros específicos
+    if not tipo_filter and not estado_filter:
+        notificaciones_no_leidas = notificaciones_list.filter(leida=False)
+        if notificaciones_no_leidas.exists():
+            notificaciones_no_leidas.update(leida=True, fecha_lectura=timezone.now())
+    
+    # Estadísticas
+    total_notificaciones = Notificacion.objects.filter(usuario=request.user).count()
+    notificaciones_no_leidas_count = Notificacion.objects.filter(usuario=request.user, leida=False).count()
+    
+    # Tipos de notificaciones disponibles para el filtro (sin duplicados)
+    tipos_disponibles = list(set(Notificacion.objects.filter(usuario=request.user).values_list('tipo', flat=True)))
+    
+    # Paginación
+    paginator = Paginator(notificaciones_list, 15)
+    page = request.GET.get('page')
+    try:
+        notificaciones_paginadas = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        notificaciones_paginadas = paginator.page(1)
+    
+    context = {
+        'notificaciones': notificaciones_paginadas,
+        'total_notificaciones': total_notificaciones,
+        'notificaciones_no_leidas_count': notificaciones_no_leidas_count,
+        'tipos_disponibles': tipos_disponibles,
+        'filtros_activos': {
+            'tipo': tipo_filter,
+            'estado': estado_filter,
+        },
+        'es_admin': request.user.rol == 'administrador',
+    }
+    return render(request, 'adopcion/notificaciones.html', context)
+
+@login_required
+def marcar_notificacion_leida(request, notificacion_id):
+    """Vista para marcar una notificación como leída"""
+    notificacion = get_object_or_404(Notificacion, id=notificacion_id, usuario=request.user)
+    notificacion.leida = True
+    notificacion.fecha_lectura = timezone.now()
+    notificacion.save()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True})
+    
+    return redirect('notificaciones')
+
+def crear_notificacion(usuario, tipo, titulo, mensaje, solicitud=None, mascota=None, donacion=None):
+    """Función base para crear notificaciones"""
+    try:
+        notificacion = Notificacion.objects.create(
+            usuario=usuario,
+            tipo=tipo,
+            titulo=titulo,
+            mensaje=mensaje,
+            solicitud=solicitud,
             mascota=mascota,
-            estado_anterior=estado_anterior,
-            estado_nuevo='disponible',
-            usuario=request.user,
-            observacion=f"Devuelto por problemas en seguimiento (cita {seguimiento.numero_cita})"
+            donacion=donacion,
+            fecha_creacion=timezone.now()
+        )
+        return notificacion
+    except Exception as e:
+        print(f"Error creando notificación: {e}")
+        return None
+
+def crear_notificaciones_registro(usuario):
+    """Crear notificación de bienvenida al registrarse"""
+    crear_notificacion(
+        usuario=usuario,
+        tipo='bienvenida',
+        titulo='¡Bienvenido a Luna & Lía! 🐾',
+        mensaje=f'Hola {usuario.nombre}, ¡gracias por unirte a nuestra comunidad! Ahora puedes explorar nuestras mascotas disponibles para adopción, hacer donaciones y ser parte de nuestra misión de rescatar huellas. ¡Bienvenido!'
+    )
+
+def crear_notificaciones_inicio_sesion(usuario):
+    """Crear notificación de inicio de sesión exitoso para usuario y administradores"""
+    # Notificación para el usuario
+    crear_notificacion(
+        usuario=usuario,
+        tipo='sesion',
+        titulo='Inicio de sesión exitoso ✅',
+        mensaje=f'¡Hola {usuario.nombre}! Has iniciado sesión correctamente. ¡Disfruta explorando nuestras mascotas!'
+    )
+    # Notificación para todos los administradores
+    administradores = Usuario.objects.filter(rol='administrador')
+    for admin in administradores:
+        crear_notificacion(
+            usuario=admin,
+            tipo='sesion_admin',
+            titulo='Nuevo inicio de sesión',
+            mensaje=f'El usuario {usuario.nombre} ({usuario.email}) ha iniciado sesión en el sistema.'
+        )
+
+def crear_notificaciones_solicitud(solicitud, accion):
+    """Crear notificaciones relacionadas con solicitudes de adopción"""
+    usuario = solicitud.usuario
+    mascota = solicitud.mascota
+    
+    if accion == 'creada':
+        # Notificación para el usuario que hizo la solicitud
+        crear_notificacion(
+            usuario=usuario,
+            tipo='solicitud',
+            titulo=f'Solicitud enviada para {mascota.nombre} 📋',
+            mensaje=f'Tu solicitud para adoptar a {mascota.nombre} ha sido enviada exitosamente. Nos pondremos en contacto contigo pronto para coordinar los siguientes pasos.'
         )
         
-        # Eliminar citas futuras de esta mascota
-        SeguimientoMascota.objects.filter(
-            mascota=mascota,
-            completada=False
-        ).delete()
-        
-        messages.warning(request, f"Cita {seguimiento.numero_cita} denegada. La mascota {mascota.nombre} ha vuelto a estar disponible.")
-        return redirect('admin_seguimiento_mascotas')
-    return redirect('admin_seguimiento_mascotas')
-
-@admin_required
-def cambiar_fecha_seguimiento(request, seguimiento_id):
-    seguimiento = get_object_or_404(SeguimientoMascota, id=seguimiento_id)
-    if request.method == 'POST':
-        nueva_fecha = request.POST.get('nueva_fecha')
-        if nueva_fecha:
-            seguimiento.proxima_cita = nueva_fecha
-            seguimiento.save()
-            # Enviar correo al adoptante
-            from django.core.mail import send_mail
-            from django.template.loader import render_to_string
-            from django.conf import settings
-            asunto = f"Nueva fecha para el seguimiento de {seguimiento.mascota.nombre}"
-            mensaje_html = render_to_string('emails/seguimiento_fecha_cambiada.html', {
-                'mascota': seguimiento.mascota,
-                'adoptante': seguimiento.adoptante,
-                'nueva_fecha': nueva_fecha
-            })
-            mensaje_txt = render_to_string('emails/seguimiento_fecha_cambiada.txt', {
-                'mascota': seguimiento.mascota,
-                'adoptante': seguimiento.adoptante,
-                'nueva_fecha': nueva_fecha
-            })
-            send_mail(
-                asunto,
-                mensaje_txt,
-                settings.DEFAULT_FROM_EMAIL,
-                [seguimiento.adoptante.email],
-                html_message=mensaje_html
+        # Notificaciones para todos los administradores
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='nueva_solicitud_admin',
+                titulo=f'Nueva solicitud de adopción - {mascota.nombre}',
+                mensaje=f'El usuario {usuario.get_full_name()} ha solicitado adoptar a {mascota.nombre}. Revisa los detalles en el panel de administración.',
+                solicitud=solicitud,
+                mascota=mascota
             )
-            messages.success(request, f"La fecha de la cita fue cambiada y se notificó al adoptante.")
+    
+    elif accion == 'aprobada':
+        crear_notificacion(
+            usuario=usuario,
+            tipo='solicitud_aprobada',
+            titulo=f'¡Solicitud aprobada! 🎉',
+            mensaje=f'¡Excelentes noticias! Tu solicitud para adoptar a {mascota.nombre} ha sido aprobada. Te contactaremos para coordinar la adopción.'
+        )
+        
+        # Notificar a administradores sobre la aprobación
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='solicitud_aprobada_admin',
+                titulo=f'Solicitud aprobada - {mascota.nombre}',
+                mensaje=f'La solicitud de {usuario.get_full_name()} para adoptar a {mascota.nombre} ha sido aprobada.',
+                solicitud=solicitud,
+                mascota=mascota
+            )
+    
+    elif accion == 'rechazada':
+        crear_notificacion(
+            usuario=usuario,
+            tipo='solicitud_rechazada',
+            titulo=f'Solicitud de adopción - {mascota.nombre}',
+            mensaje=f'Lamentamos informarte que tu solicitud para adoptar a {mascota.nombre} no pudo ser aprobada en esta ocasión. Te invitamos a revisar otras mascotas disponibles.'
+        )
+    
+    elif accion == 'completada':
+        crear_notificacion(
+            usuario=usuario,
+            tipo='adopcion_completada',
+            titulo=f'¡Adopción completada! 🏠',
+            mensaje=f'¡Felicidades! La adopción de {mascota.nombre} se ha completado exitosamente. ¡Que disfruten su nueva vida juntos!'
+        )
+
+def crear_notificaciones_donacion(donacion):
+    """Crear notificaciones relacionadas con donaciones"""
+    # Notificación para el donante
+    crear_notificacion(
+        usuario=donacion.usuario if donacion.usuario else None,
+        tipo='donacion',
+        titulo='¡Gracias por tu donación! 💝',
+        mensaje=f'¡Muchas gracias por tu donación de {donacion.get_tipo_donacion_display().lower()}! Tu generosidad nos ayuda a seguir rescatando y cuidando mascotas. Te hemos enviado un comprobante por correo.'
+    )
+    
+    # Notificaciones para administradores sobre nueva donación
+    administradores = Usuario.objects.filter(rol='administrador')
+    for admin in administradores:
+        crear_notificacion(
+            usuario=admin,
+            tipo='nueva_donacion_admin',
+            titulo=f'Nueva donación recibida - {donacion.get_tipo_donacion_display()}',
+            mensaje=f'Se ha recibido una nueva donación de {donacion.nombre_donante} {donacion.apellido_donante} por {donacion.get_tipo_donacion_display().lower()}.',
+            donacion=donacion
+        )
+
+def crear_notificaciones_mascota(mascota, accion):
+    """Crear notificaciones relacionadas con mascotas"""
+    if accion == 'nueva':
+        # Notificar a administradores sobre nueva mascota
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='nueva_mascota_admin',
+                titulo=f'Nueva mascota agregada - {mascota.nombre}',
+                mensaje=f'Se ha agregado una nueva mascota: {mascota.nombre} ({mascota.get_tipo_display()}, {mascota.get_sexo_display()}).',
+                mascota=mascota
+            )
+        
+        # Notificar a usuarios que tienen favoritos similares
+        usuarios_interesados = Usuario.objects.filter(
+            favoritos__mascota__tipo=mascota.tipo
+        ).distinct()
+        
+        for usuario in usuarios_interesados:
+            crear_notificacion(
+                usuario=usuario,
+                tipo='nueva_mascota_similar',
+                titulo=f'Nueva mascota disponible - {mascota.nombre}',
+                mensaje=f'¡Hola {usuario.nombre}! Tenemos una nueva mascota {mascota.get_tipo_display()} que podría interesarte: {mascota.nombre}. ¡Ven a conocerla!',
+                mascota=mascota
+            )
+    
+    elif accion == 'actualizada':
+        # Notificar a administradores sobre actualización
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='mascota_actualizada_admin',
+                titulo=f'Mascota actualizada - {mascota.nombre}',
+                mensaje=f'La información de {mascota.nombre} ha sido actualizada.',
+                mascota=mascota
+            )
+    
+    elif accion == 'estado_cambiado':
+        # Notificar cambio de estado
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='estado_mascota_admin',
+                titulo=f'Estado cambiado - {mascota.nombre}',
+                mensaje=f'El estado de {mascota.nombre} ha cambiado a: {mascota.get_estado_adopcion_display()}.',
+                mascota=mascota
+            )
+
+def crear_notificaciones_cita(cita, accion):
+    """Crear notificaciones relacionadas con citas de pre-adopción"""
+    if accion == 'creada':
+        # Notificar al usuario sobre la cita
+        crear_notificacion(
+            usuario=cita.solicitud.usuario,
+            tipo='cita_creada',
+            titulo=f'Cita programada - {cita.solicitud.mascota.nombre} 📅',
+            mensaje=f'Se ha programado una cita para conocer a {cita.solicitud.mascota.nombre} el {cita.fecha_cita.strftime("%d/%m/%Y")} a las {cita.hora_cita.strftime("%H:%M")}.'
+        )
+        
+        # Notificar a administradores
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='cita_creada_admin',
+                titulo=f'Nueva cita programada - {cita.solicitud.mascota.nombre}',
+                mensaje=f'Se ha programado una cita con {cita.solicitud.usuario.get_full_name()} para {cita.solicitud.mascota.nombre}.',
+                mascota=cita.solicitud.mascota
+            )
+
+def crear_notificaciones_seguimiento(seguimiento):
+    """Crear notificaciones relacionadas con seguimientos"""
+    mascota = seguimiento.mascota
+    
+    # Notificar a administradores sobre nuevo seguimiento
+    administradores = Usuario.objects.filter(rol='administrador')
+    for admin in administradores:
+        crear_notificacion(
+            usuario=admin,
+            tipo='nuevo_seguimiento_admin',
+            titulo=f'Nuevo seguimiento - {mascota.nombre}',
+            mensaje=f'Se ha registrado un nuevo seguimiento para {mascota.nombre} con peso: {seguimiento.peso}kg.',
+            mascota=mascota
+        )
+
+def crear_notificaciones_solicitudes_pendientes():
+    """Crear notificaciones diarias sobre solicitudes pendientes para administradores"""
+    solicitudes_pendientes = SolicitudAdopcion.objects.filter(estado_solicitud='pendiente').count()
+    
+    if solicitudes_pendientes > 0:
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='recordatorio_admin',
+                titulo=f'Recordatorio: {solicitudes_pendientes} solicitudes pendientes',
+                mensaje=f'Hay {solicitudes_pendientes} solicitudes de adopción pendientes de revisión. Por favor, revisa el panel de administración.'
+            )
+
+def crear_notificaciones_donaciones_recientes():
+    """Crear notificaciones sobre donaciones recientes para administradores"""
+    from datetime import timedelta
+    
+    # Donaciones de las últimas 24 horas
+    donaciones_recientes = Donacion.objects.filter(
+        fecha_donacion__gte=timezone.now() - timedelta(days=1)
+    ).count()
+    
+    if donaciones_recientes > 0:
+        administradores = Usuario.objects.filter(rol='administrador')
+        for admin in administradores:
+            crear_notificacion(
+                usuario=admin,
+                tipo='resumen_donaciones_admin',
+                titulo=f'Resumen: {donaciones_recientes} donaciones en las últimas 24h',
+                mensaje=f'Se han recibido {donaciones_recientes} donaciones en las últimas 24 horas. Revisa el panel de administración para más detalles.'
+            )
+
+@admin_email_required
+def seguimiento_mascota(request, mascota_id):
+    """Vista para registrar seguimientos de mascotas"""
+    mascota = get_object_or_404(Mascota, id=mascota_id)
+    
+    if request.method == 'POST':
+        form = SeguimientoMascotaForm(request.POST)
+        if form.is_valid():
+            seguimiento = form.save(commit=False)
+            seguimiento.mascota = mascota
+            seguimiento.id_admin_seguimiento = request.user
+            seguimiento.save()
+            
+            # Crear notificación automática
+            crear_notificaciones_seguimiento(seguimiento)
+            
+            messages.success(request, f'Seguimiento registrado exitosamente para {mascota.nombre}.')
+            return redirect('admin_editar_mascotas')
+    else:
+        form = SeguimientoMascotaForm()
+    
+    # Obtener historial de seguimientos
+    seguimientos = SeguimientoMascota.objects.filter(mascota=mascota).order_by('-fecha_seguimiento')
+    
+    context = {
+        'mascota': mascota,
+        'form': form,
+        'seguimientos': seguimientos,
+    }
+    return render(request, 'adopcion/seguimiento_mascota.html', context)
+
+@admin_email_required
+def agregar_mascota_mejorado(request):
+    """Vista mejorada para agregar mascotas"""
+    if request.method == 'POST':
+        form = MascotaFormMejorado(request.POST, request.FILES)
+        if form.is_valid():
+            mascota = form.save(commit=False)
+            mascota.id_admin_registro = request.user
+            mascota.fecha_ingreso = timezone.now().date()
+            mascota.save()
+            
+            # Crear notificación automática
+            crear_notificaciones_mascota(mascota, 'nueva')
+            
+            # Verificar si es una petición AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'mensaje': f'Mascota {mascota.nombre} agregada exitosamente.',
+                    'redirect': reverse('admin_dashboard')
+                })
+            
+            messages.success(request, f'Mascota {mascota.nombre} agregada exitosamente.')
+            return redirect('admin_dashboard')
         else:
-            messages.error(request, "Debes seleccionar una nueva fecha.")
-    return redirect('admin_seguimiento_mascotas')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': 'Por favor corrige los errores en el formulario.',
+                    'errors': form.errors
+                })
+    else:
+        form = MascotaFormMejorado()
+    
+    context = {
+        'form': form,
+        'razas_perros': MascotaFormMejorado.RAZAS_PERROS,
+        'razas_gatos': MascotaFormMejorado.RAZAS_GATOS,
+    }
+    return render(request, 'adopcion/agregar_mascota_mejorado.html', context)
+
+@admin_email_required
+def editar_mascota_mejorado(request, mascota_id):
+    """Vista mejorada para editar mascotas"""
+    mascota = get_object_or_404(Mascota, id=mascota_id)
+    
+    if request.method == 'POST':
+        form = MascotaFormMejorado(request.POST, request.FILES, instance=mascota)
+        if form.is_valid():
+            mascota = form.save()
+            
+            # Crear notificación automática
+            crear_notificaciones_mascota(mascota, 'actualizada')
+            
+            # Verificar si es una petición AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'mensaje': f'Mascota {mascota.nombre} actualizada exitosamente.',
+                    'redirect': reverse('admin_dashboard')
+                })
+            
+            messages.success(request, f'Mascota {mascota.nombre} actualizada exitosamente.')
+            return redirect('admin_dashboard')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': 'Por favor corrige los errores en el formulario.',
+                    'errors': form.errors
+                })
+    else:
+        form = MascotaFormMejorado(instance=mascota)
+    
+    context = {
+        'form': form,
+        'mascota': mascota,
+        'razas_perros': MascotaFormMejorado.RAZAS_PERROS,
+        'razas_gatos': MascotaFormMejorado.RAZAS_GATOS,
+    }
+    return render(request, 'adopcion/agregar_mascota_mejorado.html', context)
+
+@login_required
+def realizar_donacion_mejorado(request):
+    """Vista mejorada para realizar donaciones - requiere autenticación"""
+    if request.method == 'POST':
+        form = DonacionFormMejorado(request.POST, request.FILES, usuario=request.user)
+        if form.is_valid():
+            donacion = form.save()
+            
+            # Crear notificación para el usuario
+            crear_notificaciones_donacion(donacion)
+            
+            # Enviar correo de agradecimiento
+            try:
+                enviar_correo_donacion(donacion)
+            except Exception as e:
+                print(f"Error enviando email de donación: {e}")
+            
+            messages.success(request, '¡Gracias por tu donación! Te hemos enviado un correo de confirmación.')
+            return redirect('perfil')
+    else:
+        form = DonacionFormMejorado(usuario=request.user)
+    
+    # Obtener categorías activas para el formulario
+    categorias = CategoriaDonacion.objects.filter(activa=True)
+    
+    context = {
+        'form': form,
+        'categorias': categorias,
+        'usuario': request.user
+    }
+    return render(request, 'adopcion/donacion_form_mejorado.html', context)
+
+@login_required
+def obtener_notificaciones_ajax(request):
+    """Vista AJAX para obtener notificaciones no leídas"""
+    notificaciones = Notificacion.objects.filter(
+        usuario=request.user, 
+        leida=False
+    ).order_by('-fecha_creacion')[:5]
+    
+    data = []
+    for notif in notificaciones:
+        data.append({
+            'id': notif.id,
+            'tipo': notif.tipo,
+            'titulo': notif.titulo,
+            'mensaje': notif.mensaje,
+            'fecha': notif.fecha_creacion.strftime('%d/%m/%Y %H:%M'),
+        })
+    
+    return JsonResponse({'notificaciones': data, 'count': len(data)})
+
+@admin_email_required
+def busqueda_mascotas_avanzada(request):
+    """Vista para búsqueda avanzada de mascotas con filtros múltiples y estadísticas mejoradas"""
+    form = BusquedaMascotasForm(request.GET or None)
+    mascotas = Mascota.objects.filter(estado_adopcion='disponible').order_by('-fecha_ingreso')
+    
+    # Variables para estadísticas
+    total_original = mascotas.count()
+    filtros_aplicados = False
+    
+    if form.is_valid():
+        # Aplicar filtros
+        if form.cleaned_data.get('q'):
+            query = form.cleaned_data['q']
+            mascotas = mascotas.filter(
+                Q(nombre__icontains=query) |
+                Q(raza__icontains=query) |
+                Q(descripcion__icontains=query) |
+                Q(personalidad__icontains=query) |
+                Q(color__icontains=query)
+            )
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('tipo'):
+            mascotas = mascotas.filter(tipo=form.cleaned_data['tipo'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('categoria'):
+            mascotas = mascotas.filter(categoria=form.cleaned_data['categoria'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('sexo'):
+            mascotas = mascotas.filter(sexo=form.cleaned_data['sexo'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('tamaño'):
+            mascotas = mascotas.filter(tamaño=form.cleaned_data['tamaño'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('estado_adopcion'):
+            mascotas = mascotas.filter(estado_adopcion=form.cleaned_data['estado_adopcion'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('edad_min'):
+            mascotas = mascotas.filter(edad_aproximada_meses__gte=form.cleaned_data['edad_min'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('edad_max'):
+            mascotas = mascotas.filter(edad_aproximada_meses__lte=form.cleaned_data['edad_max'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('peso_min'):
+            mascotas = mascotas.filter(peso__gte=form.cleaned_data['peso_min'])
+            filtros_aplicados = True
+        
+        if form.cleaned_data.get('peso_max'):
+            mascotas = mascotas.filter(peso__lte=form.cleaned_data['peso_max'])
+            filtros_aplicados = True
+    
+    # Estadísticas mejoradas
+    total_mascotas = mascotas.count()
+    
+    # Estadísticas por estado
+    estadisticas_por_estado = {}
+    for estado_choice in Mascota.ESTADO_ADOPCION_CHOICES:
+        count = mascotas.filter(estado_adopcion=estado_choice[0]).count()
+        if count > 0:
+            estadisticas_por_estado[estado_choice[1]] = count
+    
+    # Estadísticas por categoría
+    estadisticas_por_categoria = {}
+    for categoria_choice in Mascota.CATEGORIA_CHOICES:
+        count = mascotas.filter(categoria=categoria_choice[0]).count()
+        if count > 0:
+            estadisticas_por_categoria[categoria_choice[1]] = count
+    
+    # Estadísticas por tipo
+    estadisticas_por_tipo = {}
+    for tipo_choice in Mascota.TIPO_CHOICES:
+        count = mascotas.filter(tipo=tipo_choice[0]).count()
+        if count > 0:
+            estadisticas_por_tipo[tipo_choice[1]] = count
+    
+    # Estadísticas por sexo
+    estadisticas_por_sexo = {}
+    for sexo_choice in Mascota.SEXO_CHOICES:
+        count = mascotas.filter(sexo=sexo_choice[0]).count()
+        if count > 0:
+            estadisticas_por_sexo[sexo_choice[1]] = count
+    
+    # Estadísticas por tamaño
+    estadisticas_por_tamaño = {}
+    for tamaño_choice in Mascota.TAMAÑO_CHOICES:
+        count = mascotas.filter(tamaño=tamaño_choice[0]).count()
+        if count > 0:
+            estadisticas_por_tamaño[tamaño_choice[1]] = count
+    
+    # Estadísticas adicionales
+    mascotas_disponibles = mascotas.filter(estado_adopcion='disponible').count()
+    mascotas_en_proceso = mascotas.filter(estado_adopcion='en_proceso').count()
+    mascotas_adoptadas = mascotas.filter(estado_adopcion='adoptado').count()
+    mascotas_esterilizadas = mascotas.filter(esterilizado=True).count()
+    mascotas_vacunadas = mascotas.filter(vacunas_completas=True).count()
+    mascotas_con_microchip = mascotas.filter(microchip=True).count()
+    
+    # Promedio de edad y peso
+    promedio_edad = mascotas.aggregate(avg_edad=Avg('edad_aproximada_meses'))['avg_edad'] or 0
+    promedio_peso = mascotas.aggregate(avg_peso=Avg('peso'))['avg_peso'] or 0
+    
+    # Mascotas más populares (por número de favoritos)
+    mascotas_populares = mascotas.annotate(
+        num_favoritos=Count('seguidores')
+    ).order_by('-num_favoritos')[:5]
+    
+    # Mascotas más antiguas en la fundación
+    mascotas_antiguas = mascotas.order_by('fecha_ingreso')[:5]
+    
+    # Paginación
+    paginator = Paginator(mascotas, 20)
+    page = request.GET.get('page')
+    try:
+        mascotas_paginadas = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        mascotas_paginadas = paginator.page(1)
+    
+    context = {
+        'form': form,
+        'mascotas': mascotas_paginadas,
+        'total_original': total_original,
+        'total_mascotas': total_mascotas,
+        'filtros_aplicados': filtros_aplicados,
+        'estadisticas_por_estado': estadisticas_por_estado,
+        'estadisticas_por_categoria': estadisticas_por_categoria,
+        'estadisticas_por_tipo': estadisticas_por_tipo,
+        'estadisticas_por_sexo': estadisticas_por_sexo,
+        'estadisticas_por_tamaño': estadisticas_por_tamaño,
+        'mascotas_disponibles': mascotas_disponibles,
+        'mascotas_en_proceso': mascotas_en_proceso,
+        'mascotas_adoptadas': mascotas_adoptadas,
+        'mascotas_esterilizadas': mascotas_esterilizadas,
+        'mascotas_vacunadas': mascotas_vacunadas,
+        'mascotas_con_microchip': mascotas_con_microchip,
+        'promedio_edad': round(promedio_edad, 1),
+        'promedio_peso': round(promedio_peso, 1),
+        'mascotas_populares': mascotas_populares,
+        'mascotas_antiguas': mascotas_antiguas,
+    }
+    return render(request, 'adopcion/busqueda_mascotas_avanzada.html', context)
+
+@admin_email_required
+def busqueda_multiple_donantes(request):
+    """Vista para búsqueda múltiple de donantes con filtros avanzados"""
+    
+    # Obtener parámetros de filtro
+    nombre_filter = request.GET.get('nombre', '')
+    email_filter = request.GET.get('email', '')
+    tipo_donacion_filter = request.GET.get('tipo_donacion', '')
+    estado_filter = request.GET.get('estado_donacion', '')
+    fecha_inicio = request.GET.get('fecha_inicio', '')
+    fecha_fin = request.GET.get('fecha_fin', '')
+    monto_min = request.GET.get('monto_min', '')
+    monto_max = request.GET.get('monto_max', '')
+    frecuencia_filter = request.GET.get('frecuencia', '')
+    
+    # Query base
+    donaciones = Donacion.objects.all().order_by('-fecha_donacion')
+    
+    # Aplicar filtros
+    if nombre_filter:
+        donaciones = donaciones.filter(
+            Q(nombre_donante__icontains=nombre_filter) |
+            Q(apellido_donante__icontains=nombre_filter)
+        )
+    
+    if email_filter:
+        donaciones = donaciones.filter(email_donante__icontains=email_filter)
+    
+    if tipo_donacion_filter:
+        donaciones = donaciones.filter(tipo_donacion=tipo_donacion_filter)
+    
+    if estado_filter:
+        donaciones = donaciones.filter(estado_donacion=estado_filter)
+    
+    if frecuencia_filter:
+        donaciones = donaciones.filter(frecuencia=frecuencia_filter)
+    
+    if fecha_inicio:
+        donaciones = donaciones.filter(fecha_donacion__date__gte=fecha_inicio)
+    
+    if fecha_fin:
+        donaciones = donaciones.filter(fecha_donacion__date__lte=fecha_fin)
+    
+    if monto_min:
+        donaciones = donaciones.filter(monto__gte=monto_min)
+    
+    if monto_max:
+        donaciones = donaciones.filter(monto__lte=monto_max)
+    
+    # Estadísticas
+    total_donaciones = donaciones.count()
+    total_valor = sum(donacion.get_valor_total() for donacion in donaciones)
+    
+    # Estadísticas por tipo de donación
+    estadisticas_por_tipo = {}
+    for tipo_choice in Donacion.TIPO_DONACION_CHOICES:
+        count = donaciones.filter(tipo_donacion=tipo_choice[0]).count()
+        if count > 0:
+            estadisticas_por_tipo[tipo_choice[1]] = count
+    
+    # Estadísticas por estado
+    estadisticas_por_estado = {}
+    for estado_choice in Donacion.objects.values_list('estado_donacion', flat=True).distinct():
+        count = donaciones.filter(estado_donacion=estado_choice).count()
+        if count > 0:
+            estadisticas_por_estado[estado_choice] = count
+    
+    # Estadísticas por frecuencia
+    estadisticas_por_frecuencia = {}
+    for frecuencia_choice in Donacion.FRECUENCIA_CHOICES:
+        count = donaciones.filter(frecuencia=frecuencia_choice[0]).count()
+        if count > 0:
+            estadisticas_por_frecuencia[frecuencia_choice[1]] = count
+    
+    # Paginación
+    paginator = Paginator(donaciones, 20)
+    page = request.GET.get('page')
+    try:
+        donaciones_paginadas = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        donaciones_paginadas = paginator.page(1)
+    
+    context = {
+        'donaciones': donaciones_paginadas,
+        'total_donaciones': total_donaciones,
+        'total_valor': total_valor,
+        'estadisticas_por_tipo': estadisticas_por_tipo,
+        'estadisticas_por_estado': estadisticas_por_estado,
+        'estadisticas_por_frecuencia': estadisticas_por_frecuencia,
+        'filtros_activos': {
+            'nombre': nombre_filter,
+            'email': email_filter,
+            'tipo_donacion': tipo_donacion_filter,
+            'estado_donacion': estado_filter,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'monto_min': monto_min,
+            'monto_max': monto_max,
+            'frecuencia': frecuencia_filter,
+        }
+    }
+    
+    return render(request, 'adopcion/busqueda_multiple_donantes.html', context)
+
+def login_view(request):
+    """Vista personalizada de login que genera notificaciones"""
+    if request.user.is_authenticated:
+        return redirect('inicio')
+    
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                auth_login(request, user)
+                # Crear notificación de inicio de sesión
+                crear_notificaciones_inicio_sesion(user)
+                messages.success(request, f'¡Bienvenido de vuelta, {user.nombre}!')
+                return redirect('inicio')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'registration/login.html', {'form': form})
+
+def aprobar_solicitud(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudAdopcion, id=solicitud_id)
+    solicitud.estado_solicitud = 'aprobada'
+    solicitud.save()
+    crear_notificaciones_solicitud(solicitud, 'aprobada')
+    return redirect('detalle_solicitud', solicitud_id=solicitud_id)
+
+def rechazar_solicitud(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudAdopcion, id=solicitud_id)
+    solicitud.estado_solicitud = 'rechazada'
+    solicitud.save()
+    crear_notificaciones_solicitud(solicitud, 'rechazada')
+    return redirect('detalle_solicitud', solicitud_id=solicitud_id)
+
+@admin_email_required
+def busqueda_multiple_donaciones(request):
+    """Vista para búsqueda múltiple de donaciones en el panel de administración"""
+    form = BusquedaDonacionesForm(request.GET)
+    donaciones = Donacion.objects.all()
+    
+    if form.is_valid():
+        # Aplicar filtros
+        nombre = form.cleaned_data.get('nombre')
+        apellido = form.cleaned_data.get('apellido')
+        email = form.cleaned_data.get('email')
+        tipo_donacion = form.cleaned_data.get('tipo_donacion')
+        categoria = form.cleaned_data.get('categoria')
+        frecuencia = form.cleaned_data.get('frecuencia')
+        estado_donacion = form.cleaned_data.get('estado_donacion')
+        fecha_desde = form.cleaned_data.get('fecha_desde')
+        fecha_hasta = form.cleaned_data.get('fecha_hasta')
+        monto_min = form.cleaned_data.get('monto_min')
+        monto_max = form.cleaned_data.get('monto_max')
+        anonimo = form.cleaned_data.get('anonimo')
+        
+        # Construir consulta
+        if nombre:
+            donaciones = donaciones.filter(nombre_donante__icontains=nombre)
+        if apellido:
+            donaciones = donaciones.filter(apellido_donante__icontains=apellido)
+        if email:
+            donaciones = donaciones.filter(email_donante__icontains=email)
+        if tipo_donacion:
+            donaciones = donaciones.filter(tipo_donacion=tipo_donacion)
+        if categoria:
+            donaciones = donaciones.filter(categoria_insumo=categoria)
+        if frecuencia:
+            donaciones = donaciones.filter(frecuencia=frecuencia)
+        if estado_donacion:
+            donaciones = donaciones.filter(estado_donacion=estado_donacion)
+        if fecha_desde:
+            donaciones = donaciones.filter(fecha_donacion__date__gte=fecha_desde)
+        if fecha_hasta:
+            donaciones = donaciones.filter(fecha_donacion__date__lte=fecha_hasta)
+        if monto_min:
+            donaciones = donaciones.filter(monto__gte=monto_min)
+        if monto_max:
+            donaciones = donaciones.filter(monto__lte=monto_max)
+        if anonimo:
+            donaciones = donaciones.filter(anonimo=anonimo == 'True')
+    
+    # Ordenar por fecha más reciente
+    donaciones = donaciones.order_by('-fecha_donacion')
+    
+    # Paginación
+    paginator = Paginator(donaciones, 20)
+    page = request.GET.get('page')
+    try:
+        donaciones_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        donaciones_paginadas = paginator.page(1)
+    except EmptyPage:
+        donaciones_paginadas = paginator.page(paginator.num_pages)
+    
+    # Estadísticas
+    total_donaciones = donaciones.count()
+    total_monto = donaciones.aggregate(total=Sum('monto'))['total'] or 0
+    donaciones_confirmadas = donaciones.filter(estado_donacion='confirmada').count()
+    donaciones_pendientes = donaciones.filter(estado_donacion='pendiente').count()
+    
+    context = {
+        'form': form,
+        'donaciones': donaciones_paginadas,
+        'total_donaciones': total_donaciones,
+        'total_monto': total_monto,
+        'donaciones_confirmadas': donaciones_confirmadas,
+        'donaciones_pendientes': donaciones_pendientes,
+    }
+    
+    return render(request, 'adopcion/busqueda_multiple_donaciones.html', context)

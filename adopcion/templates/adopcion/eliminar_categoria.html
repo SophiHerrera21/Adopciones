@@ -1,0 +1,69 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Categoría - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-trash"></i> Eliminar Categoría
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                        </h5>
+                        <p>¿Estás seguro de que quieres eliminar la categoría <strong>"{{ categoria.nombre }}"</strong>?</p>
+                        
+                        {% if donaciones_count > 0 %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-ban"></i>
+                                <strong>No se puede eliminar:</strong> Esta categoría tiene {{ donaciones_count }} donación{{ donaciones_count|pluralize:"es" }} asociada{{ donaciones_count|pluralize:"s" }}.
+                            </div>
+                        {% else %}
+                            <p class="mb-0">Esta acción no se puede deshacer.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Detalles de la Categoría:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Nombre:</strong> {{ categoria.nombre }}</li>
+                                <li><strong>Descripción:</strong> {{ categoria.descripcion|default:"Sin descripción" }}</li>
+                                <li><strong>Estado:</strong> 
+                                    {% if categoria.activa %}
+                                        <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactiva</span>
+                                    {% endif %}
+                                </li>
+                                <li><strong>Fecha de creación:</strong> {{ categoria.fecha_creacion|date:"d/m/Y H:i" }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'gestionar_categorias' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                        {% if donaciones_count == 0 %}
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Eliminar Categoría
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

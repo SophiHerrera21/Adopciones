@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import user_passes_test
 from functools import wraps
 from django.shortcuts import redirect
 from django.conf import settings
+from django.utils.encoding import force_str
 
 def admin_required(function=None, redirect_field_name=None, login_url='login'):
     """
@@ -21,10 +22,8 @@ def admin_email_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
-        
-        if not request.user.email.endswith('@lunaylia.com'):
-            # Redirigir a alguna página de 'acceso denegado' o a la página principal
-            return redirect('inicio') 
-            
+        email = force_str(request.user.email).strip().lower().replace(' ', '')
+        if not email.endswith('@huellas.com'):
+            return redirect('inicio')
         return view_func(request, *args, **kwargs)
     return _wrapped_view 

@@ -102,16 +102,6 @@
                                     {% endfor %}
                                 </select>
                             </div>
-
-                            <div class="filter-group">
-                                <label for="estado_adopcion">Estado</label>
-                                <select name="estado_adopcion" id="estado_adopcion" class="filter-select">
-                                    <option value="">Cualquier estado</option>
-                                    {% for value, label in estados %}
-                                        <option value="{{ value }}" {% if filtros_actuales.estado_adopcion == value %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
                         </div>
 
                         <!-- Filtros de edad -->
@@ -164,6 +154,22 @@
 
     <!-- Resultados -->
     <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6 class="mb-2"><i class="fas fa-search"></i> Resultados de Búsqueda</h6>
+                    {% if filtros_aplicados %}
+                        <p class="mb-1">
+                            <strong>Mascotas encontradas:</strong> {{ total_results }} de {{ total_original }} mascotas totales
+                        </p>
+                    {% else %}
+                        <p class="mb-1">
+                            <strong>Total de mascotas:</strong> {{ total_results }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
         <h4 id="total-results-container">Mostrando <span id="total-results">{{ total_results }}</span> peludos</h4>
         <hr>
     </div>
@@ -171,7 +177,15 @@
     <section class="pets-grid-section pt-2 pb-5">
         <div class="container">
             <div id="pets-grid-container">
-                {% include 'adopcion/_lista_mascotas_parcial.html' %}
+                {% if mascotas %}
+                    {% include 'adopcion/_lista_mascotas_parcial.html' %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-dog fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No hay mascotas que coincidan con tu búsqueda</h4>
+                        <p class="text-muted">Intenta con otros filtros o revisa más tarde.</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </section>

@@ -1,0 +1,387 @@
+{% extends "adopcion/base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if mascota %}Editar {{ mascota.nombre }}{% else %}Agregar Nueva Mascota{% endif %} - Luna & Lía
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-paw me-2"></i>
+                        {% if mascota %}
+                            Editar a {{ mascota.nombre }}
+                        {% else %}
+                            Agregar Nueva Mascota
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="mascotaForm">
+                        {% csrf_token %}
+                        
+                        <!-- Información Básica -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Información Básica
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                    {{ form.nombre.label }} *
+                                </label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                    <div class="text-danger">{{ form.nombre.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                    {{ form.tipo.label }} *
+                                </label>
+                                {{ form.tipo }}
+                                {% if form.tipo.errors %}
+                                    <div class="text-danger">{{ form.tipo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.raza.id_for_label }}" class="form-label">
+                                    {{ form.raza.label }}
+                                </label>
+                                {{ form.raza }}
+                                {% if form.raza.errors %}
+                                    <div class="text-danger">{{ form.raza.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.categoria.id_for_label }}" class="form-label">
+                                    {{ form.categoria.label }} *
+                                </label>
+                                {{ form.categoria }}
+                                {% if form.categoria.errors %}
+                                    <div class="text-danger">{{ form.categoria.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.sexo.id_for_label }}" class="form-label">
+                                    {{ form.sexo.label }} *
+                                </label>
+                                {{ form.sexo }}
+                                {% if form.sexo.errors %}
+                                    <div class="text-danger">{{ form.sexo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.tamaño.id_for_label }}" class="form-label">
+                                    {{ form.tamaño.label }} *
+                                </label>
+                                {{ form.tamaño }}
+                                {% if form.tamaño.errors %}
+                                    <div class="text-danger">{{ form.tamaño.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Información de Edad -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-calendar-alt me-2"></i>Información de Edad
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                    {{ form.fecha_nacimiento.label }}
+                                </label>
+                                {{ form.fecha_nacimiento }}
+                                {% if form.fecha_nacimiento.help_text %}
+                                    <div class="form-text">{{ form.fecha_nacimiento.help_text }}</div>
+                                {% endif %}
+                                {% if form.fecha_nacimiento.errors %}
+                                    <div class="text-danger">{{ form.fecha_nacimiento.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.edad_aproximada_meses.id_for_label }}" class="form-label">
+                                    {{ form.edad_aproximada_meses.label }}
+                                </label>
+                                {{ form.edad_aproximada_meses }}
+                                {% if form.edad_aproximada_meses.help_text %}
+                                    <div class="form-text">{{ form.edad_aproximada_meses.help_text }}</div>
+                                {% endif %}
+                                {% if form.edad_aproximada_meses.errors %}
+                                    <div class="text-danger">{{ form.edad_aproximada_meses.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Información Física -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-weight me-2"></i>Información Física
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.peso.id_for_label }}" class="form-label">
+                                    {{ form.peso.label }}
+                                </label>
+                                {{ form.peso }}
+                                {% if form.peso.errors %}
+                                    <div class="text-danger">{{ form.peso.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.color.id_for_label }}" class="form-label">
+                                    {{ form.color.label }}
+                                </label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                    <div class="text-danger">{{ form.color.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Información de Salud -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-heartbeat me-2"></i>Información de Salud
+                                </h5>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.estado_salud.id_for_label }}" class="form-label">
+                                    {{ form.estado_salud.label }} *
+                                </label>
+                                {{ form.estado_salud }}
+                                {% if form.estado_salud.errors %}
+                                    <div class="text-danger">{{ form.estado_salud.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    {{ form.vacunas_completas }}
+                                    <label class="form-check-label" for="{{ form.vacunas_completas.id_for_label }}">
+                                        {{ form.vacunas_completas.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    {{ form.esterilizado }}
+                                    <label class="form-check-label" for="{{ form.esterilizado.id_for_label }}">
+                                        {{ form.esterilizado.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    {{ form.microchip }}
+                                    <label class="form-check-label" for="{{ form.microchip.id_for_label }}">
+                                        {{ form.microchip.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Descripciones -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-file-alt me-2"></i>Descripciones
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                    {{ form.descripcion.label }}
+                                </label>
+                                {{ form.descripcion }}
+                                {% if form.descripcion.errors %}
+                                    <div class="text-danger">{{ form.descripcion.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.personalidad.id_for_label }}" class="form-label">
+                                    {{ form.personalidad.label }}
+                                </label>
+                                {{ form.personalidad }}
+                                {% if form.personalidad.errors %}
+                                    <div class="text-danger">{{ form.personalidad.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.necesidades_especiales.id_for_label }}" class="form-label">
+                                    {{ form.necesidades_especiales.label }}
+                                </label>
+                                {{ form.necesidades_especiales }}
+                                {% if form.necesidades_especiales.errors %}
+                                    <div class="text-danger">{{ form.necesidades_especiales.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Estado y Imagen -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-cog me-2"></i>Estado e Imagen
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.estado_adopcion.id_for_label }}" class="form-label">
+                                    {{ form.estado_adopcion.label }} *
+                                </label>
+                                {{ form.estado_adopcion }}
+                                {% if form.estado_adopcion.errors %}
+                                    <div class="text-danger">{{ form.estado_adopcion.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.imagen_principal.id_for_label }}" class="form-label">
+                                    {{ form.imagen_principal.label }}
+                                </label>
+                                {{ form.imagen_principal }}
+                                {% if mascota and mascota.imagen_principal %}
+                                    <div class="mt-2">
+                                        <img src="{{ mascota.imagen_principal.url }}" alt="Imagen actual" class="img-thumbnail" style="max-width: 150px;">
+                                        <small class="text-muted d-block">Imagen actual</small>
+                                    </div>
+                                {% endif %}
+                                {% if form.imagen_principal.errors %}
+                                    <div class="text-danger">{{ form.imagen_principal.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha de Ingreso (solo mostrar al editar) -->
+                        {% if mascota %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-calendar-check me-2"></i>Información del Sistema
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha de Ingreso</label>
+                                <input type="text" class="form-control" value="{{ mascota.fecha_ingreso|date:'d/m/Y' }}" readonly>
+                                <small class="text-muted">Esta fecha no se puede modificar</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Registrado por</label>
+                                <input type="text" class="form-control" value="{{ mascota.id_admin_registro.get_full_name|default:mascota.id_admin_registro.username }}" readonly>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-primary btn-lg me-3">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if mascota %}Actualizar{% else %}Guardar{% endif %}
+                                </button>
+                                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para raza dinámica -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoField = document.getElementById('id_tipo');
+    const razaField = document.getElementById('id_raza');
+    
+    if (tipoField && razaField) {
+        const razasPerros = [
+            ['', 'Selecciona una raza'],
+            ['labrador', 'Labrador Retriever'],
+            ['golden', 'Golden Retriever'],
+            ['pastor_aleman', 'Pastor Alemán'],
+            ['bulldog', 'Bulldog'],
+            ['beagle', 'Beagle'],
+            ['poodle', 'Poodle'],
+            ['rottweiler', 'Rottweiler'],
+            ['doberman', 'Doberman'],
+            ['boxer', 'Boxer'],
+            ['chihuahua', 'Chihuahua'],
+            ['pug', 'Pug'],
+            ['husky', 'Husky Siberiano'],
+            ['criollo', 'Criollo'],
+            ['otro', 'Otra raza']
+        ];
+        
+        const razasGatos = [
+            ['', 'Selecciona una raza'],
+            ['siames', 'Siamés'],
+            ['persa', 'Persa'],
+            ['main_coon', 'Maine Coon'],
+            ['bengala', 'Bengala'],
+            ['ragdoll', 'Ragdoll'],
+            ['british_shorthair', 'British Shorthair'],
+            ['sphynx', 'Sphynx'],
+            ['abyssinian', 'Abisinio'],
+            ['russian_blue', 'Azul Ruso'],
+            ['criollo', 'Criollo'],
+            ['otro', 'Otra raza']
+        ];
+        
+        function actualizarRazas() {
+            const tipoSeleccionado = tipoField.value;
+            razaField.innerHTML = '';
+            
+            let razas = [];
+            if (tipoSeleccionado === 'perro') {
+                razas = razasPerros;
+            } else if (tipoSeleccionado === 'gato') {
+                razas = razasGatos;
+            } else {
+                razas = [['', 'Primero selecciona el tipo de mascota']];
+            }
+            
+            razas.forEach(function(raza) {
+                const option = document.createElement('option');
+                option.value = raza[0];
+                option.textContent = raza[1];
+                razaField.appendChild(option);
+            });
+        }
+        
+        tipoField.addEventListener('change', actualizarRazas);
+        actualizarRazas(); // Ejecutar al cargar la página
+    }
+});
+</script>
+{% endblock %} 

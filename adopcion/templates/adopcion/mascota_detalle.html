@@ -10,9 +10,11 @@
         <div class="col-md-6 mb-4">
             <div class="pet-image-gallery">
                 {% if mascota.imagen_principal %}
-                    <img src="{{ mascota.imagen_principal.url }}" 
-                         alt="Foto principal de {{ mascota.nombre }}" 
-                         class="mascota-detail-image">
+                    <div class="mascota-img-frame">
+                        <img src="{{ mascota.imagen_principal.url }}" 
+                             alt="Foto principal de {{ mascota.nombre }}" 
+                             class="mascota-detail-image">
+                    </div>
                 {% else %}
                     <div class="mascota-detail-image image-placeholder">
                         <i class="fas fa-paw"></i>
@@ -32,7 +34,7 @@
                 <div class="d-grid gap-2 my-4">
                     <a href="{% url 'solicitar_adopcion' mascota.id %}" class="btn btn-primary-custom btn-lg">Solicitar Adopción</a>
                     {% if user.is_authenticated %}
-                        <button class="btn btn-secondary-custom" id="btn-favorito" data-mascota-id="{{ mascota.id }}">
+                        <button class="btn btn-secondary-custom" id="btn-favorito" data-mascota-id="{{ mascota.id }}" data-es-favorito="{{ es_favorito|yesno:'true,false' }}">
                             {% if es_favorito %}
                                 <i class="fas fa-heart"></i> Quitar de Favoritos
                             {% else %}
@@ -47,7 +49,7 @@
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item d-flex justify-content-between"><strong>Especie:</strong> <span>{{ mascota.get_especie_display }}</span></li>
                     <li class="list-group-item d-flex justify-content-between"><strong>Raza:</strong> <span>{{ mascota.raza|default:"Mestizo" }}</span></li>
-                    <li class="list-group-item d-flex justify-content-between"><strong>Edad:</strong> <span>{{ mascota.edad_aproximada }} meses</span></li>
+                    <li class="list-group-item d-flex justify-content-between"><strong>Edad:</strong> <span>{{ mascota.get_edad_display }}</span></li>
                     <li class="list-group-item d-flex justify-content-between"><strong>Sexo:</strong> <span>{{ mascota.get_sexo_display }}</span></li>
                     <li class="list-group-item d-flex justify-content-between"><strong>Tamaño:</strong> <span>{{ mascota.get_tamano_display }}</span></li>
                     <li class="list-group-item d-flex justify-content-between"><strong>Personalidad:</strong> <span>{{ mascota.personalidad|default:"No especificada" }}</span></li>
@@ -94,29 +96,20 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    // Actualizar el botón
-                    this.dataset.esFavorito = data.is_favorite.toString();
-                    if (data.is_favorite) {
-                        this.innerHTML = '<i class="fas fa-heart"></i> Quitar de Favoritos';
-                        this.classList.remove('btn-secondary-custom');
-                        this.classList.add('btn-danger');
-                    } else {
-                        this.innerHTML = '<i class="far fa-heart"></i> Agregar a Favoritos';
-                        this.classList.remove('btn-danger');
-                        this.classList.add('btn-secondary-custom');
-                    }
-                    
-                    // Mostrar mensaje
-                    toastMessage.textContent = data.message;
-                    toast.show();
+                this.dataset.esFavorito = data.is_favorite.toString();
+                if (data.is_favorite) {
+                    this.innerHTML = '<i class="fas fa-heart"></i> Quitar de Favoritos';
+                    this.classList.remove('btn-secondary-custom');
+                    this.classList.add('btn-danger');
                 } else {
-                    toastMessage.textContent = data.message;
-                    toast.show();
+                    this.innerHTML = '<i class="far fa-heart"></i> Agregar a Favoritos';
+                    this.classList.remove('btn-danger');
+                    this.classList.add('btn-secondary-custom');
                 }
+                toastMessage.textContent = data.message;
+                toast.show();
             })
             .catch(error => {
-                console.error('Error:', error);
                 toastMessage.textContent = 'Error al procesar la solicitud';
                 toast.show();
             });

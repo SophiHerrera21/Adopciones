@@ -1,0 +1,235 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Gestionar Categorías de Donación - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-tags"></i> Gestionar Categorías de Donación
+                    </h3>
+                    <p class="mb-0 mt-2">Agrega y gestiona las categorías para donaciones de insumos</p>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para agregar nueva categoría -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-plus-circle"></i> Agregar Nueva Categoría
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                                {{ form.nombre.label }} *
+                                            </label>
+                                            {{ form.nombre }}
+                                            {% if form.nombre.errors %}
+                                                <div class="text-danger">{{ form.nombre.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                                {{ form.descripcion.label }}
+                                            </label>
+                                            {{ form.descripcion }}
+                                            {% if form.descripcion.errors %}
+                                                <div class="text-danger">{{ form.descripcion.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                {{ form.activa }}
+                                                <label class="form-check-label" for="{{ form.activa.id_for_label }}">
+                                                    {{ form.activa.label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save"></i> Crear Categoría
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle"></i> Información
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>¿Qué son las categorías de donación?</strong></p>
+                                    <p>Las categorías permiten organizar las donaciones de insumos que recibe la fundación. Esto ayuda a:</p>
+                                    <ul>
+                                        <li>Organizar mejor los inventarios</li>
+                                        <li>Identificar necesidades específicas</li>
+                                        <li>Facilitar la gestión de donaciones</li>
+                                        <li>Mejorar la experiencia del donante</li>
+                                    </ul>
+                                    <p><strong>Ejemplos de categorías:</strong></p>
+                                    <ul>
+                                        <li>Alimentos para perros</li>
+                                        <li>Alimentos para gatos</li>
+                                        <li>Medicamentos</li>
+                                        <li>Juguetes</li>
+                                        <li>Cobijas y camas</li>
+                                        <li>Productos de limpieza</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de categorías existentes -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-list"></i> Categorías Existentes
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if categorias %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Descripción</th>
+                                                        <th>Estado</th>
+                                                        <th>Fecha Creación</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for categoria in categorias %}
+                                                    <tr>
+                                                        <td>
+                                                            <strong>{{ categoria.nombre }}</strong>
+                                                        </td>
+                                                        <td>
+                                                            {% if categoria.descripcion %}
+                                                                {{ categoria.descripcion|truncatewords:10 }}
+                                                            {% else %}
+                                                                <span class="text-muted">Sin descripción</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if categoria.activa %}
+                                                                <span class="badge bg-success">
+                                                                    <i class="fas fa-check"></i> Activa
+                                                                </span>
+                                                            {% else %}
+                                                                <span class="badge bg-secondary">
+                                                                    <i class="fas fa-times"></i> Inactiva
+                                                                </span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {{ categoria.fecha_creacion|date:"d/m/Y" }}
+                                                        </td>
+                                                        <td>
+                                                            <div class="btn-group" role="group">
+                                                                <a href="{% url 'editar_categoria' categoria.id %}" 
+                                                                   class="btn btn-sm btn-outline-primary">
+                                                                    <i class="fas fa-edit"></i> Editar
+                                                                </a>
+                                                                <a href="{% url 'eliminar_categoria' categoria.id %}" 
+                                                                   class="btn btn-sm btn-outline-danger"
+                                                                   onclick="return confirm('¿Estás seguro de que quieres eliminar esta categoría?')">
+                                                                    <i class="fas fa-trash"></i> Eliminar
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">No hay categorías creadas</h5>
+                                            <p class="text-muted">Comienza agregando una nueva categoría usando el formulario de arriba.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver al Panel
+                            </a>
+                            <a href="{% url 'busqueda_donantes' %}" class="btn btn-info">
+                                <i class="fas fa-search"></i> Ver Donantes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.8em;
+    padding: 0.5em 0.8em;
+}
+
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-header {
+    border-bottom: none;
+}
+</style>
+{% endblock %} 

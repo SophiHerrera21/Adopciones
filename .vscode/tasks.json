@@ -1,0 +1,85 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Django: Runserver",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python",
+            "args": [
+                "manage.py",
+                "runserver"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Django: Make Migrations",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python",
+            "args": [
+                "manage.py",
+                "makemigrations"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Django: Migrate",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python",
+            "args": [
+                "manage.py",
+                "migrate"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Django: Check",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python",
+            "args": [
+                "manage.py",
+                "check"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+} 

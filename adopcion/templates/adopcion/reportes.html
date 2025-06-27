@@ -23,7 +23,7 @@
                         <h5 class="card-title mb-0">Reporte General de Mascotas</h5>
                     </div>
                     <p class="card-text">Genera un listado completo de todas las mascotas registradas en la fundación, incluyendo su estado actual (disponible, adoptado, etc.) y fecha de ingreso con timestamps.</p>
-                    <a href="{% url 'pdf_mascotas' %}" class="btn btn-primary w-100" target="_blank">
+                    <a href="{% url 'generar_mascotas_pdf' %}" class="btn btn-primary w-100" target="_blank">
                         <i class="fas fa-download me-1"></i>Generar PDF de Mascotas
                     </a>
                 </div>
@@ -40,14 +40,14 @@
                     </div>
                     <p class="card-text">Informe detallado de donaciones (monetarias e insumos).</p>
                     
-                    <form action="{% url 'pdf_donaciones' %}" method="get" target="_blank" class="mt-auto">
+                    <form action="{% url 'generar_donaciones_pdf' %}" method="get" target="_blank" class="mt-auto">
                         <p class="mb-2"><strong>Generar reporte mensual:</strong></p>
                         <div class="mb-2">{{ form.mes }}</div>
                         <div class="mb-2">{{ form.año }}</div>
                         <button type="submit" class="btn btn-success w-100 mb-2">
                             <i class="fas fa-calendar-alt me-1"></i>Generar Reporte Mensual
                         </button>
-                        <a href="{% url 'pdf_donaciones' %}" class="btn btn-outline-success w-100" target="_blank">
+                        <a href="{% url 'generar_donaciones_pdf' %}" class="btn btn-outline-success w-100" target="_blank">
                             <i class="fas fa-file-pdf me-1"></i>Generar Reporte Completo
                         </a>
                     </form>
@@ -65,14 +65,14 @@
                     </div>
                     <p class="card-text">Estadísticas de solicitudes de pre-adopción.</p>
 
-                    <form action="{% url 'pdf_solicitudes' %}" method="get" target="_blank" class="mt-auto">
+                    <form action="{% url 'generar_solicitudes_pdf' %}" method="get" target="_blank" class="mt-auto">
                         <p class="mb-2"><strong>Generar reporte mensual:</strong></p>
                         <div class="mb-2">{{ form.mes }}</div>
                         <div class="mb-2">{{ form.año }}</div>
                         <button type="submit" class="btn btn-warning w-100 mb-2">
                             <i class="fas fa-calendar-alt me-1"></i>Generar Reporte Mensual
                         </button>
-                        <a href="{% url 'pdf_solicitudes' %}" class="btn btn-outline-warning w-100" target="_blank">
+                        <a href="{% url 'generar_solicitudes_pdf' %}" class="btn btn-outline-warning w-100" target="_blank">
                             <i class="fas fa-file-pdf me-1"></i>Generar Reporte Completo
                         </a>
                     </form>
@@ -89,7 +89,7 @@
                         <h5 class="card-title mb-0">Reporte de Actividad</h5>
                     </div>
                     <p class="card-text">Informe de actividad reciente con timestamps de ingreso de mascotas, donaciones realizadas y solicitudes procesadas en tiempo real.</p>
-                    <a href="{% url 'pdf_actividad' %}" class="btn btn-info w-100" target="_blank">
+                    <a href="{% url 'generar_actividad_pdf' %}" class="btn btn-info w-100" target="_blank">
                         <i class="fas fa-download me-1"></i>Generar PDF de Actividad
                     </a>
                 </div>

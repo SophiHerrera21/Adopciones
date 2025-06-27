@@ -9,27 +9,325 @@
                 <p class="lead">Estás a un paso de cambiar la vida de <strong>{{ mascota.nombre }}</strong>. Por favor, completa el siguiente formulario con la mayor sinceridad posible. Esta información es confidencial y nos ayudará a asegurar que nuestras mascotas encuentren el hogar ideal.</p>
             </div>
 
-            <form method="post">
+            <form method="post" id="solicitud-form">
                 {% csrf_token %}
                 
-                {% for field in form %}
-                <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% for error in field.errors %}
-                    <div class="alert alert-danger mt-1">{{ error }}</div>
-                    {% endfor %}
+                <!-- Información de Vivienda -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-home"></i> Información de Vivienda</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.vivienda.id_for_label }}" class="form-label">{{ form.vivienda.label }}</label>
+                                {{ form.vivienda }}
+                                {% for error in form.vivienda.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.es_propia }}
+                                    <label class="form-check-label" for="{{ form.es_propia.id_for_label }}">
+                                        {{ form.es_propia.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.tiene_patio }}
+                                    <label class="form-check-label" for="{{ form.tiene_patio.id_for_label }}">
+                                        {{ form.tiene_patio.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3 campo-condicional" id="tamano-patio-container" style="display: none;">
+                                <label for="{{ form.tamano_patio.id_for_label }}" class="form-label">{{ form.tamano_patio.label }}</label>
+                                {{ form.tamano_patio }}
+                                {% for error in form.tamano_patio.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                {% endfor %}
+
+                <!-- Información Familiar -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-users"></i> Información Familiar</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.adultos_en_casa.id_for_label }}" class="form-label">{{ form.adultos_en_casa.label }}</label>
+                                {{ form.adultos_en_casa }}
+                                {% for error in form.adultos_en_casa.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.ninos_en_casa.id_for_label }}" class="form-label">{{ form.ninos_en_casa.label }}</label>
+                                {{ form.ninos_en_casa }}
+                                {% for error in form.ninos_en_casa.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 campo-condicional" id="edades-ninos-container" style="display: none;">
+                            <label for="{{ form.edades_ninos.id_for_label }}" class="form-label">{{ form.edades_ninos.label }}</label>
+                            {{ form.edades_ninos }}
+                            {% for error in form.edades_ninos.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experiencia con Mascotas -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-paw"></i> Experiencia con Mascotas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.tuvo_mascotas }}
+                                <label class="form-check-label" for="{{ form.tuvo_mascotas.id_for_label }}">
+                                    {{ form.tuvo_mascotas.label }}
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 campo-condicional" id="experiencia-mascotas-container" style="display: none;">
+                            <label for="{{ form.experiencia_mascotas.id_for_label }}" class="form-label">{{ form.experiencia_mascotas.label }}</label>
+                            {{ form.experiencia_mascotas }}
+                            {% for error in form.experiencia_mascotas.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3 campo-condicional" id="otras-mascotas-container" style="display: none;">
+                            <label for="{{ form.otras_mascotas.id_for_label }}" class="form-label">{{ form.otras_mascotas.label }}</label>
+                            {{ form.otras_mascotas }}
+                            {% for error in form.otras_mascotas.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compromiso y Cuidado -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-heart"></i> Compromiso y Cuidado</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.tiempo_diario.id_for_label }}" class="form-label">{{ form.tiempo_diario.label }}</label>
+                                {{ form.tiempo_diario }}
+                                {% for error in form.tiempo_diario.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.cuidador_principal.id_for_label }}" class="form-label">{{ form.cuidador_principal.label }}</label>
+                                {{ form.cuidador_principal }}
+                                {% for error in form.cuidador_principal.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.todos_deacuerdo }}
+                                <label class="form-check-label" for="{{ form.todos_deacuerdo.id_for_label }}">
+                                    {{ form.todos_deacuerdo.label }}
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.plan_vacaciones.id_for_label }}" class="form-label">{{ form.plan_vacaciones.label }}</label>
+                            {{ form.plan_vacaciones }}
+                            {% for error in form.plan_vacaciones.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Económica -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-dollar-sign"></i> Información Económica</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.ingreso_aproximado.id_for_label }}" class="form-label">{{ form.ingreso_aproximado.label }}</label>
+                                {{ form.ingreso_aproximado }}
+                                {% for error in form.ingreso_aproximado.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.presupuesto_mensual_mascota.id_for_label }}" class="form-label">{{ form.presupuesto_mensual_mascota.label }}</label>
+                                {{ form.presupuesto_mensual_mascota }}
+                                {% for error in form.presupuesto_mensual_mascota.errors %}
+                                <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Veterinaria -->
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-stethoscope"></i> Información Veterinaria</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.tiene_veterinario }}
+                                <label class="form-check-label" for="{{ form.tiene_veterinario.id_for_label }}">
+                                    {{ form.tiene_veterinario.label }}
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 campo-condicional" id="nombre-veterinario-container" style="display: none;">
+                            <label for="{{ form.nombre_veterinario.id_for_label }}" class="form-label">{{ form.nombre_veterinario.label }}</label>
+                            {{ form.nombre_veterinario }}
+                            {% for error in form.nombre_veterinario.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Motivación y Preferencias -->
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="fas fa-comments"></i> Motivación y Preferencias</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.motivo_adopcion.id_for_label }}" class="form-label">{{ form.motivo_adopcion.label }}</label>
+                            {{ form.motivo_adopcion }}
+                            {% for error in form.motivo_adopcion.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.manejo_comportamiento.id_for_label }}" class="form-label">{{ form.manejo_comportamiento.label }}</label>
+                            {{ form.manejo_comportamiento }}
+                            {% for error in form.manejo_comportamiento.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.compromiso_largo_plazo }}
+                                <label class="form-check-label" for="{{ form.compromiso_largo_plazo.id_for_label }}">
+                                    {{ form.compromiso_largo_plazo.label }}
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.preferencias_mascota.id_for_label }}" class="form-label">{{ form.preferencias_mascota.label }}</label>
+                            {{ form.preferencias_mascota }}
+                            {% for error in form.preferencias_mascota.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.comentario_extra.id_for_label }}" class="form-label">{{ form.comentario_extra.label }}</label>
+                            {{ form.comentario_extra }}
+                            {% for error in form.comentario_extra.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
 
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary btn-lg">Enviar Solicitud</button>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para mostrar/ocultar campos condicionales
+    function toggleCampoCondicional(checkboxId, containerId) {
+        const checkbox = document.getElementById(checkboxId);
+        const container = document.getElementById(containerId);
+        
+        function updateVisibility() {
+            if (checkbox.checked) {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+                // Limpiar el campo cuando se oculta
+                const field = container.querySelector('input, textarea, select');
+                if (field) {
+                    field.value = '';
+                }
+            }
+        }
+        
+        checkbox.addEventListener('change', updateVisibility);
+        updateVisibility(); // Ejecutar al cargar la página
+    }
+    
+    // Función para campos numéricos
+    function toggleCampoNumerico(inputId, containerId, minValue = 1) {
+        const input = document.getElementById(inputId);
+        const container = document.getElementById(containerId);
+        
+        function updateVisibility() {
+            const value = parseInt(input.value) || 0;
+            if (value >= minValue) {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+                // Limpiar el campo cuando se oculta
+                const field = container.querySelector('input, textarea, select');
+                if (field) {
+                    field.value = '';
+                }
+            }
+        }
+        
+        input.addEventListener('input', updateVisibility);
+        updateVisibility(); // Ejecutar al cargar la página
+    }
+    
+    // Configurar campos condicionales
+    toggleCampoCondicional('{{ form.tiene_patio.id_for_label }}', 'tamano-patio-container');
+    toggleCampoCondicional('{{ form.tuvo_mascotas.id_for_label }}', 'experiencia-mascotas-container');
+    toggleCampoCondicional('{{ form.tuvo_mascotas.id_for_label }}', 'otras-mascotas-container');
+    toggleCampoCondicional('{{ form.tiene_veterinario.id_for_label }}', 'nombre-veterinario-container');
+    
+    // Configurar campos numéricos
+    toggleCampoNumerico('{{ form.ninos_en_casa.id_for_label }}', 'edades-ninos-container', 1);
+});
+</script>
 {% endblock %} 

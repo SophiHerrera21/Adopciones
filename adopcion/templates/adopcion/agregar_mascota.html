@@ -67,11 +67,10 @@
                                 {% endif %}
                             </div>
                             <div class="form-group">
-                                <label for="{{ form.edad_aproximada.id_for_label }}">{{ form.edad_aproximada.label }}</label>
-                                {{ form.edad_aproximada }}
-                                <div class="field-help">Edad en meses (1-204 meses, máximo 17 años)</div>
-                                {% if form.edad_aproximada.errors %}
-                                    <div class="error-message">{{ form.edad_aproximada.errors.0 }}</div>
+                                <label for="{{ form.edad_aproximada_meses.id_for_label }}">{{ form.edad_aproximada_meses.label }}</label>
+                                {{ form.edad_aproximada_meses }}
+                                {% if form.edad_aproximada_meses.errors %}
+                                    <div class="error-message">{{ form.edad_aproximada_meses.errors.0 }}</div>
                                 {% endif %}
                             </div>
                         </div>

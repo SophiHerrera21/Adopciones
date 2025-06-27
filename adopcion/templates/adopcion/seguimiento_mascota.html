@@ -1,0 +1,191 @@
+{% extends 'adopcion/base.html' %}
+{% load static %}
+
+{% block title %}Seguimiento de {{ mascota.nombre }} - Luna & Lía{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-heartbeat"></i> Seguimiento de {{ mascota.nombre }}
+                </h2>
+                <a href="{% url 'admin_editar_mascotas' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+            
+            <!-- Información de la mascota -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-paw"></i> Información de la Mascota</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mascota-img-frame">
+                                <img src="{{ mascota.get_imagen_url }}" alt="{{ mascota.nombre }}" class="img-fluid rounded">
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nombre:</strong> {{ mascota.nombre }}</p>
+                                    <p><strong>Tipo:</strong> {{ mascota.get_tipo_display }}</p>
+                                    <p><strong>Raza:</strong> {{ mascota.raza|default:"No especificada" }}</p>
+                                    <p><strong>Edad:</strong> {{ mascota.get_edad_display }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Sexo:</strong> {{ mascota.get_sexo_display }}</p>
+                                    <p><strong>Tamaño:</strong> {{ mascota.get_tamaño_display }}</p>
+                                    <p><strong>Estado:</strong> 
+                                        <span class="badge {% if mascota.estado_adopcion == 'disponible' %}bg-success{% elif mascota.estado_adopcion == 'en_proceso' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                            {{ mascota.get_estado_display }}
+                                        </span>
+                                    </p>
+                                    <p><strong>Fecha de ingreso:</strong> {{ mascota.fecha_ingreso|date:"d/m/Y" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de seguimiento -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-plus"></i> Registrar Nuevo Seguimiento</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.peso.id_for_label }}" class="form-label">
+                                        {{ form.peso.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.peso }}
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                    {% if form.peso.errors %}
+                                        <div class="text-danger">{{ form.peso.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.proxima_revision.id_for_label }}" class="form-label">
+                                        {{ form.proxima_revision.label }}
+                                    </label>
+                                    {{ form.proxima_revision }}
+                                    {% if form.proxima_revision.errors %}
+                                        <div class="text-danger">{{ form.proxima_revision.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.estado_salud.id_for_label }}" class="form-label">
+                                {{ form.estado_salud.label }} *
+                            </label>
+                            {{ form.estado_salud }}
+                            {% if form.estado_salud.errors %}
+                                <div class="text-danger">{{ form.estado_salud.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                                {{ form.observaciones.label }}
+                            </label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                                <div class="text-danger">{{ form.observaciones.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save"></i> Registrar Seguimiento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Historial de seguimientos -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i> Historial de Seguimientos ({{ seguimientos.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if seguimientos %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Peso</th>
+                                        <th>Estado de Salud</th>
+                                        <th>Observaciones</th>
+                                        <th>Próxima Revisión</th>
+                                        <th>Registrado por</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for seguimiento in seguimientos %}
+                                    <tr>
+                                        <td>{{ seguimiento.fecha_seguimiento|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if seguimiento.peso %}
+                                                {{ seguimiento.peso }} kg
+                                            {% else %}
+                                                <span class="text-muted">No registrado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ seguimiento.estado_salud }}</td>
+                                        <td>
+                                            {% if seguimiento.observaciones %}
+                                                {{ seguimiento.observaciones|truncatechars:50 }}
+                                            {% else %}
+                                                <span class="text-muted">Sin observaciones</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if seguimiento.proxima_revision %}
+                                                {{ seguimiento.proxima_revision|date:"d/m/Y" }}
+                                            {% else %}
+                                                <span class="text-muted">No programada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if seguimiento.administrador %}
+                                                {{ seguimiento.administrador.nombre }} {{ seguimiento.administrador.apellido }}
+                                            {% else %}
+                                                <span class="text-muted">Sistema</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay seguimientos registrados</h4>
+                            <p class="text-muted">Registra el primer seguimiento usando el formulario de arriba</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

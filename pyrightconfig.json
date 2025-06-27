@@ -1,0 +1,49 @@
+{
+    "include": [
+        "adopcion",
+        "luna_lia_project",
+        "manage.py"
+    ],
+    "exclude": [
+        "**/venv",
+        "**/__pycache__",
+        "**/migrations",
+        "**/node_modules",
+        "**/.git"
+    ],
+    "ignore": [
+        "venv"
+    ],
+    "venvPath": ".",
+    "venv": "venv",
+    "pythonVersion": "3.13",
+    "pythonPlatform": "Darwin",
+    "executionEnvironments": [
+        {
+            "root": ".",
+            "pythonVersion": "3.13",
+            "pythonPlatform": "Darwin",
+            "extraPaths": [
+                "./venv/lib/python3.13/site-packages",
+                "./venv/lib/python3.13/site-packages/django",
+                "./venv/lib/python3.13/site-packages/django/contrib",
+                "./venv/lib/python3.13/site-packages/django/core",
+                "./venv/lib/python3.13/site-packages/django/db",
+                "./venv/lib/python3.13/site-packages/django/forms",
+                "./venv/lib/python3.13/site-packages/django/http",
+                "./venv/lib/python3.13/site-packages/django/template",
+                "./venv/lib/python3.13/site-packages/django/utils",
+                "./venv/lib/python3.13/site-packages/django/views"
+            ],
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "luna_lia_project.settings",
+                "PYTHONPATH": "."
+            }
+        }
+    ],
+    "typeCheckingMode": "basic",
+    "useLibraryCodeForTypes": true,
+    "autoImportCompletions": true,
+    "indexing": true,
+    "stubPath": "./typings"
+} 

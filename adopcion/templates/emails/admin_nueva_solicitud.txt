@@ -15,7 +15,7 @@ INFORMACIÓN DE LA MASCOTA:
 - Nombre: {{ solicitud.mascota.nombre }}
 - Tipo: {{ solicitud.mascota.get_tipo_display }}
 - Raza: {{ solicitud.mascota.raza|default:"Mestizo" }}
-- Edad: {{ solicitud.mascota.edad_aproximada }} meses
+- Edad: {{ solicitud.mascota.get_edad_display }}
 - Estado actual: {{ solicitud.mascota.get_estado_adopcion_display }}
 
 DETALLES DE LA SOLICITUD:

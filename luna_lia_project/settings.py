@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,10 +27,8 @@ SECRET_KEY = 'django-insecure-your-secret-key-here'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['adopciones-x39t.onrender.com','127.0.0.1']
+ALLOWED_HOSTS = ['adopciones-x39t.onrender.com','127.0.0.1', 'localhost']
 
-import pymysql
-pymysql.install_as_MySQLdb()
 CSRF_TRUSTED_ORIGINS = [
     "https://adopciones-x39t.onrender.com",
 ]
@@ -70,6 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'adopcion.context_processors.notificaciones_context',
             ],
         },
     },
@@ -83,15 +83,8 @@ WSGI_APPLICATION = 'luna_lia_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'railway',
-        'USER': 'root',      # Usuario de MySQL
-        'PASSWORD': 'GevgSJdMGSPBqVqwdIGTqiKwDnOynkEy',      # Sin contraseña
-        'HOST': 'maglev.proxy.rlwy.net',                # O la IP de tu servidor de base de datos
-        'PORT': '31175',                     # Puerto por defecto de MySQL
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -164,7 +157,6 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # Messages
-from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert-info',
     messages.INFO: 'alert-info',
